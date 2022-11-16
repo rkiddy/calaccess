@@ -15,8 +15,8 @@ only get added to and one can see that the daily changes are usually very small.
 
 Works with Python 3.10.6 and a virtualenv set up with the requirements.txt given.
 
-% virtualenv .venv
-% .venv/bin/activate
-% pip install -r requirements.txt
-% python -m flask run
+     % virtualenv .venv
+     % .venv/bin/activate
+     % pip install -r requirements.txt
+     % python -m flask run
 
