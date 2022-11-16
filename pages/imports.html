@@ -1,0 +1,30 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html>
+<head>
+    <title>Cal-Access Imports</title>
+    {% include "styles.html" %}
+</head>
+<body>
+<div style="padding: 25px 25px 25px 25px;">
+    <table class="table">
+        <tr>
+            <th>DataDate</th>
+            <th>Target</th>
+            <th>NumLines</th>
+            <th>NumRead</th>
+            <th>Errors</th>
+            <th>ImportDt</th>
+        </tr>
+        {% for imported in imports %}
+        <tr>
+            <td>{{ imported.data_date }}</td>
+            <td>{{ imported.target }}</td>
+            <td>{{ imported.num_lines }}</td>
+            <td>{{ imported.num_read }}</td>
+            <td>{{ imported.error_count }}</td>
+            <td>{{ imported.import_dt }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body></html>
