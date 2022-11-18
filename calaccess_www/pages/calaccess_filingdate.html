@@ -6,6 +6,12 @@
 </head>
 <body>
 <div style="padding: 25px 25px 25px 25px;">
+    <h2>
+        Filing Date: {{ filing_date }}
+        {% if form_id %}
+        - Form: {{ form_id }}
+        {% endif %}
+    </h2>
     <table class="table">
         <tr>
             <th>Filing ID</th>
@@ -14,9 +20,7 @@
             <th>Filer Type</th>
             <th>Period</th>
             <th>Form</th>
-            <th>Filing Seq</th>
-            <th>Rpt Start</th>
-            <th>Rpt End</th>
+            <th>Rpt Covers</th>
         </tr>
         {% for filing in calaccess_filing_date %}
         <tr>
@@ -26,9 +30,11 @@
             <td>{{ filing.filer_type }}</td>
             <td>{{ filing.period }}</td>
             <td>{{ filing.form_id }}</td>
-            <td>{{ filing.filing_seq }}</td>
+            {% if filing.rpt_start == filing.rpt_end %}
             <td>{{ filing.rpt_start }}</td>
-            <td>{{ filing.rpt_end }}</td>
+            {% else %}
+            <td>{{ filing.rpt_start }}<br/>{{ filing.rpt_end }}</td>
+            {% endif %}
         </tr>
         {% endfor %}
     </table>

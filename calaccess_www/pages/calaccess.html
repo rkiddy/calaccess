@@ -22,11 +22,17 @@
                     {% for cfront in front_dates %}
                         <tr>
                             <td><a href="/calaccess/filingdate/{{ cfront.filing_date }}">{{ cfront.filing_date }}</a></td>
-                            <td>&nbsp;-&nbsp;</td>
+                            <td>&nbsp;&nbsp;</td>
                             <td>{{ cfront.count }}</td>
                             {% for form_id in form_ids %}
                             <td>&nbsp;&nbsp;</td>
-                            <td>{{ filing_counts[cfront.filing_date][form_id] }}</td>
+                            <td>
+                                {% if filing_counts[cfront.filing_date][form_id] > 0 %}
+                                <a href="/calaccess/filingdate/{{ cfront.filing_date }}/form_id/{{ form_id }}">{{ filing_counts[cfront.filing_date][form_id] }}</a>
+                                {% else %}
+                                0
+                                {% endif %}
+                            </td>
                             {% endfor %}
                         </tr>
                     {% endfor %}

@@ -46,7 +46,7 @@ def full_name(naml, namf, namt, nams):
     return buf
 
 
-def build(param, extra=None):
+def build(param, extra=None, param2=None, extra2=None ):
 
     context = dict()
 
@@ -118,20 +118,27 @@ def build(param, extra=None):
 
     if param == 'calaccess_filingdate':
 
-        filing_date = extra
-
-        # filer_id | filing_id | period_id | form_id | filing_sequence |
-        # filing_date | rpt_start | rpt_end
-
-        sql = f"""
-        select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
-            f1.filing_sequence as filing_seq, date(f1.rpt_start) as rpt_start,
-            date(f1.rpt_end) as rpt_end, f2.filer_type, f2.naml, f2.namf, f2.namt,
-            f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc
-        from filer_filings f1 left join filername f2 on f1.filer_id = f2.filer_id
-            left join filing_period f3 on f1.period_id = f3.period_id
-                where f1.filing_date = '{filing_date}'
-        """
+        if extra2 is None:
+            sql = f"""
+            select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
+                f1.filing_sequence as filing_seq, date(f1.rpt_start) as rpt_start,
+                date(f1.rpt_end) as rpt_end, f2.filer_type, f2.naml, f2.namf, f2.namt,
+                f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc
+            from filer_filings f1 left join filername f2 on f1.filer_id = f2.filer_id
+                left join filing_period f3 on f1.period_id = f3.period_id
+                    where f1.filing_date = '{extra}'
+            """
+        else:
+            sql = f"""
+            select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
+                f1.filing_sequence as filing_seq, date(f1.rpt_start) as rpt_start,
+                date(f1.rpt_end) as rpt_end, f2.filer_type, f2.naml, f2.namf, f2.namt,
+                f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc
+            from filer_filings f1 left join filername f2 on f1.filer_id = f2.filer_id
+                left join filing_period f3 on f1.period_id = f3.period_id
+                    where f1.filing_date = '{extra}' and
+                        f1.form_id = '{extra2}'
+            """
 
         rows = conn.execute(sql).fetchall()
 
@@ -185,6 +192,9 @@ def build(param, extra=None):
                 entry['period'] = f"????&nbsp;Q{entry['period_desc'][-1]}"
             if entry['period_start'] is None and entry['period_desc'] is None:
                 entry['period'] = None
+
+        context['filing_date'] = extra
+        context['form_id'] = extra2
 
         context['calaccess_filing_date'] = common.order_dicts_by_key(list(next_data.values()), 'filing_id')
 

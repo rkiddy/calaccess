@@ -1,7 +1,4 @@
 
-import re
-import sys
-
 from flask import Flask
 from jinja2 import Environment, PackageLoader
 
@@ -24,6 +21,13 @@ def contracts_front():
 def contracts_filingdate(param):
     main = env.get_template('calaccess_filingdate.html')
     context = data.build('calaccess_filingdate', param)
+    return main.render(**context)
+
+
+@calaccess.route('/calaccess/filingdate/<param>/form_id/<param2>')
+def contracts_filingdate_form_id(param, param2):
+    main = env.get_template('calaccess_filingdate.html')
+    context = data.build('calaccess_filingdate', param, 'form_id', param2)
     return main.render(**context)
 
 
