@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html lang="en">
+<head>
+    <title>OpenCalAccess</title>
+    {% include "styles.html" %}
+</head>
+<body>
+<div style="padding: 25px 25px 25px 25px;">
+    <table class="table">
+        <tr>
+            <td>
+                <table>
+                    <tr>
+                        <th>FilingDate</th>
+                        <td>&nbsp;</td>
+                        <th>Filings #</th>
+                    </tr>
+                    {% for cfront in calaccess_front %}
+                        <tr>
+                            <td><a href="/calaccess/filingdate/{{ cfront.filing_date }}">{{ cfront.filing_date }}</a></td>
+                            <td>&nbsp;-&nbsp;</td>
+                            <td>{{ cfront.count }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </td>
+        </tr>
+    </table>
+</div>
+</body>
+</html>

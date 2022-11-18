@@ -1,0 +1,1627 @@
+
+acronyms
+pk int primary key
+acronym varchar(32)
+stands_for varchar(255)
+effect_dt date
+a_desc varchar(255)
+
+address
+pk int primary key
+adrid int
+city varchar(40)
+st char(2)
+zip4 varchar(10)
+phon varchar(20)
+fax varchar(20)
+email varchar(60)
+
+ballot_measures
+pk int primary key
+election_date date
+filer_id varchar(11)
+measure_no char(2)
+measure_name varchar(200)
+measure_short_name varchar(50)
+jurisdiction varchar(50)
+
+cvr_campaign_disclosure
+pk int primary key
+filing_id int
+amend_id int
+rec_type char(4)
+form_type varchar(8)
+filer_id varchar(11)
+entity_cd char(3)
+filer_naml varchar(200)
+filer_namf varchar(45)
+filer_namt varchar(10)
+filer_nams varchar(10)
+report_num char(3)
+rpt_date date
+stmt_type char(2)
+late_rptno varchar(30)
+from_date date
+thru_date date
+elect_date date
+filer_city varchar(30)
+filer_st char(2)
+filer_zip4 varchar(10)
+filer_phon varchar(20)
+filer_fax varchar(20)
+file_email varchar(60)
+mail_city varchar(30)
+mail_st char(2)
+mail_zip4 varchar(10)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st char(2)
+tres_zip4 varchar(10)
+tres_phon varchar(20)
+tres_fax varchar(20)
+tres_email varchar(60)
+cmtte_type char(1)
+control_yn char(1)
+sponsor_yn char(1)
+primfrm_yn char(1)
+brdbase_yn char(1)
+amendexp_1 varchar(100)
+amendexp_2 varchar(100)
+amendexp_3 varchar(100)
+rpt_att_cb char(1)
+cmtte_id varchar(9)
+reportname char(3)
+rptfromdt date
+rptthrudt date
+emplbus_cb char(1)
+bus_name varchar(200)
+bus_city varchar(30)
+bus_st char(2)
+bus_zip4 varchar(10)
+bus_inter varchar(40)
+busact_cb char(1)
+busactvity varchar(90)
+assoc_cb char(1)
+assoc_int varchar(90)
+other_cb char(1)
+other_int varchar(90)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+cand_city varchar(30)
+cand_st char(2)
+cand_zip4 varchar(10)
+cand_phon varchar(20)
+cand_fax varchar(20)
+cand_email varchar(60)
+bal_name varchar(200)
+bal_num char(3)
+bal_juris varchar(40)
+office_cd char(3)
+offic_dscr varchar(40)
+juris_cd char(3)
+juris_dscr varchar(40)
+dist_no char(3)
+off_s_h_cd char(1)
+sup_opp_cd char(1)
+employer varchar(200)
+occupation varchar(60)
+selfemp_cb char(1)
+bal_id varchar(9)
+cand_id varchar(9)
+
+cvr_e530
+pk int primary key
+filing_id int
+amend_id int
+rec_type varchar(3)
+form_type varchar(8)
+entity_cd varchar(3)
+filer_naml varchar(200)
+filer_namf varchar(45)
+filer_namt varchar(10)
+filer_nams varchar(10)
+report_num varchar(3)
+rpt_date date
+filer_city varchar(30)
+filer_st varchar(2)
+filer_zip4 varchar(10)
+occupation varchar(400)
+employer varchar(400)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(45)
+cand_nams varchar(45)
+district_cd int
+office_cd int
+pmnt_dt date
+pmnt_amount decimal(12,2)
+type_literature char(1)
+type_printads char(1)
+type_radio char(1)
+type_tv char(1)
+type_it char(1)
+type_billboards char(1)
+type_other char(1)
+other_desc varchar(400)
+
+cvr_lobby_disclosure
+pk int primary key
+filing_id int
+amend_id int
+rec_type char(4)
+form_type varchar(8)
+sender_id varchar(9)
+filer_id varchar(11)
+entity_cd char(3)
+filer_naml varchar(200)
+filer_namf varchar(45)
+filer_namt varchar(10)
+filer_nams varchar(10)
+report_num char(3)
+rpt_date date
+from_date date
+thru_date date
+cum_beg_dt date
+firm_id varchar(9)
+firm_name varchar(200)
+firm_city varchar(30)
+firm_st char(2)
+firm_zip4 varchar(10)
+firm_phon varchar(20)
+mail_city varchar(30)
+mail_st char(2)
+mail_zip4 varchar(10)
+mail_phon varchar(20)
+sig_date date
+sig_loc varchar(45)
+sig_naml varchar(200)
+sig_namf varchar(45)
+sig_namt varchar(10)
+sig_nams varchar(10)
+prn_naml varchar(200)
+prn_namf varchar(45)
+prn_namt varchar(10)
+prn_nams varchar(10)
+sig_title varchar(45)
+nopart1_cb char(1)
+nopart2_cb char(1)
+part1_1_cb char(1)
+part1_2_cb char(1)
+ctrib_n_cb char(1)
+ctrib_y_cb char(1)
+lby_actvty varchar(400)
+lobby_n_cb char(1)
+lobby_y_cb char(1)
+major_naml varchar(200)
+major_namf varchar(45)
+major_namt varchar(10)
+major_nams varchar(10)
+rcpcmte_nm varchar(200)
+rcpcmte_id varchar(9)
+
+cvr_registration
+pk int primary key
+filing_id int NOT NULL
+amend_id int NOT NULL
+rec_type char(4)
+form_type varchar(8)
+sender_id varchar(9)
+filer_id varchar(11)
+entity_cd char(3)
+filer_naml varchar(200)
+filer_namf varchar(45)
+filer_namt varchar(10)
+filer_nams varchar(10)
+report_num char(3)
+rpt_date date
+ls_beg_yr char(4)
+ls_end_yr char(4)
+qual_date date
+eff_date date
+bus_city varchar(30)
+bus_st char(2)
+bus_zip4 varchar(10)
+bus_phon varchar(20)
+bus_fax varchar(20)
+bus_email varchar(60)
+mail_city varchar(30)
+mail_st char(2)
+mail_zip4 varchar(10)
+mail_phon varchar(20)
+sig_date date
+sig_loc varchar(45)
+sig_naml varchar(200)
+sig_namf varchar(45)
+sig_namt varchar(10)
+sig_nams varchar(10)
+prn_naml varchar(200)
+prn_namf varchar(45)
+prn_namt varchar(10)
+prn_nams varchar(10)
+sig_title varchar(45)
+stmt_firm varchar(90)
+ind_cb char(1)
+bus_cb char(1)
+trade_cb char(1)
+oth_cb char(1)
+a_b_name varchar(200)
+a_b_city varchar(30)
+a_b_st char(2)
+a_b_zip4 varchar(10)
+descrip_1 varchar(300)
+descrip_2 varchar(300)
+c_less50 char(1)
+c_more50 char(1)
+ind_class char(3)
+ind_descr varchar(100)
+bus_class char(3)
+bus_descr varchar(100)
+auth_name varchar(200)
+auth_city varchar(30)
+auth_st char(2)
+auth_zip4 varchar(10)
+lobby_int varchar(300)
+influen_yn char(1)
+firm_name varchar(200)
+newcert_cb char(1)
+rencert_cb char(1)
+complet_dt date
+lby_reg_cb char(1)
+lby_604_cb char(1)
+st_leg_yn char(1)
+st_agency varchar(100)
+lobby_cb char(1)
+l_firm_cb char(1)
+
+cvr_so
+pk int primary key
+filing_id int
+amend_id int
+rec_type char(4)
+form_type varchar(8)
+filer_id varchar(11)
+entity_cd char(3)
+filer_naml varchar(200)
+filer_namf varchar(45)
+filer_namt varchar(10)
+filer_nams varchar(10)
+report_num char(3)
+rpt_date date
+qual_cb char(1)
+qualfy_dt date
+term_date date
+city varchar(30)
+st char(2)
+zip4 varchar(10)
+phone varchar(20)
+county_res varchar(20)
+county_act varchar(20)
+mail_city varchar(30)
+mail_st char(2)
+mail_zip4 varchar(10)
+cmte_fax varchar(20)
+cmte_email varchar(60)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st char(2)
+tres_zip4 varchar(10)
+tres_phon varchar(20)
+actvty_lvl char(2)
+com82013yn char(1)
+com82013nm varchar(200)
+com82013id varchar(9)
+control_cb char(1)
+bank_nam varchar(200)
+bank_adr1 varchar(55)
+bank_adr2 varchar(55)
+bank_city varchar(30)
+bank_st char(2)
+bank_zip4 varchar(10)
+bank_phon varchar(20)
+acct_opendt date
+surplusdsp varchar(90)
+primfc_cb char(1)
+genpurp_cb char(1)
+gpc_descr varchar(300)
+sponsor_cb char(1)
+brdbase_cb char(1)
+smcont_qualdt date
+
+cvr2_campaign_disclosure
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type char(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd char(3)
+title varchar(90)
+mail_city varchar(30)
+mail_st char(2)
+mail_zip4 varchar(10)
+f460_part char(2)
+cmte_id varchar(9)
+enty_naml varchar(200)
+enty_namf varchar(45)
+enty_namt varchar(10)
+enty_nams varchar(10)
+enty_city varchar(30)
+enty_st char(2)
+enty_zip4 varchar(10)
+enty_phon varchar(20)
+enty_fax varchar(20)
+enty_email varchar(60)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+control_yn char(1)
+office_cd char(3)
+offic_dscr varchar(40)
+juris_cd char(3)
+juris_dscr varchar(40)
+dist_no char(3)
+off_s_h_cd char(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd char(1)
+
+cvr2_lobby_disclosure
+pk int primary key
+amend_id int
+entity_cd char(3)
+entity_id varchar(9)
+enty_namf varchar(45)
+enty_naml varchar(200)
+enty_nams varchar(10)
+enty_namt varchar(10)
+enty_title varchar(45)
+filing_id int
+form_type varchar(8)
+line_item int
+rec_type char(4)
+tran_id varchar(20)
+
+cvr2_registration
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+entity_id varchar(9)
+enty_naml varchar(200)
+enty_namf varchar(45)
+enty_namt varchar(10)
+enty_nams varchar(10)
+
+cvr2_so
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+enty_naml varchar(200)
+enty_namf varchar(45)
+enty_namt varchar(10)
+enty_nams varchar(10)
+item_cd varchar(3)
+mail_city varchar(30)
+mail_st varchar(2)
+mail_zip4 varchar(10)
+day_phone varchar(20)
+fax_phone varchar(20)
+email_adr varchar(60)
+cmte_id varchar(9)
+ind_group varchar(90)
+office_cd varchar(3)
+offic_dscr varchar(40)
+juris_cd varchar(3)
+juris_dscr varchar(40)
+dist_no varchar(3)
+off_s_h_cd varchar(1)
+non_pty_cb varchar(1)
+party_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd varchar(1)
+year_elect varchar(4)
+pof_title varchar(45)
+
+cvr3_verification_info
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+sig_date date
+sig_loc varchar(45)
+sig_naml varchar(200)
+sig_namf varchar(45)
+sig_namt varchar(10)
+sig_nams varchar(10)
+
+debt
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+payee_naml varchar(200)
+payee_namf varchar(45)
+payee_namt varchar(100)
+payee_nams varchar(10)
+payee_city varchar(30)
+payee_st varchar(2)
+payee_zip4 varchar(10)
+beg_bal decimal(12,2)
+amt_incur decimal(12,2)
+amt_paid decimal(12,2)
+end_bal decimal(12,2)
+expn_code varchar(3)
+expn_dscr varchar(400)
+cmte_id varchar(9)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(100)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st varchar(2)
+tres_zip4 varchar(10)
+memo_code varchar(10)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+xref_schnm varchar(2)
+xref_match varchar(1)
+
+efs_filing_log
+pk int primary key
+filing_date date
+filingstatus varchar(2)
+vendor varchar(90)
+filer_id varchar(11)
+form_type varchar(8)
+error_no varchar(20)
+
+expn
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+payee_naml varchar(200)
+payee_namf varchar(45)
+payee_namt varchar(10)
+payee_nams varchar(10)
+payee_city varchar(30)
+payee_st varchar(2)
+payee_zip4 varchar(10)
+expn_date date
+amount decimal(12,2)
+cum_ytd decimal(12,2)
+cum_oth decimal(12,2)
+expn_chkno varchar(20)
+expn_code varchar(3)
+expn_dscr varchar(400)
+agent_naml varchar(200)
+agent_namf varchar(45)
+agent_namt varchar(10)
+agent_nams varchar(10)
+cmte_id varchar(9)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st varchar(2)
+tres_zip4 varchar(10)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+office_cd varchar(3)
+offic_dscr varchar(40)
+juris_cd varchar(3)
+juris_dscr varchar(40)
+dist_no varchar(3)
+off_s_h_cd varchar(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd varchar(3)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+g_from_e_f varchar(1)
+xref_schnm varchar(2)
+xref_match varchar(1)
+
+f495p2
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+elect_date date
+electjuris varchar(40)
+contribamt decimal(12,2)
+
+f501_502
+pk int primary key
+filing_id int
+amend_id int
+rec_type varchar(4)
+form_type varchar(8)
+filer_id varchar(11)
+committee_id varchar(9)
+entity_cd int
+report_num varchar(3)
+rpt_date date
+stmt_type int
+from_date date
+thru_date date
+elect_date date
+cand_naml varchar(200)
+cand_namf varchar(45)
+can_namm varchar(20)
+cand_namt varchar(10)
+cand_nams varchar(10)
+moniker_pos varchar(9)
+moniker varchar(20)
+cand_city varchar(30)
+cand_st varchar(2)
+cand_zip4 varchar(10)
+cand_phon varchar(20)
+cand_fax varchar(20)
+cand_email varchar(60)
+fin_naml varchar(200)
+fin_namf varchar(45)
+fin_namt varchar(10)
+fin_nams varchar(10)
+fin_city varchar(30)
+fin_st varchar(2)
+fin_zip4 varchar(10)
+fin_phon varchar(20)
+fin_fax varchar(20)
+fin_email varchar(60)
+office_cd varchar(9)
+offic_dscr varchar(80)
+agency_nam varchar(200)
+juris_cd varchar(9)
+juris_dscr varchar(30)
+dist_no varchar(3)
+party varchar(200)
+yr_of_elec int
+elec_type int
+execute_dt date
+can_sig varchar(200)
+account_no varchar(32)
+acct_op_dt date
+party_cd varchar(9)
+district_cd int
+accept_limit_yn varchar(1)
+did_exceed_dt date
+cntrb_prsnl_fnds_dt date
+
+f690p2
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+exec_date date
+from_date date
+thru_date date
+chg_parts varchar(100)
+chg_sects varchar(100)
+amend_txt1 varchar(330)
+
+filername
+pk int primary key
+xref_filer_id varchar(20)
+filer_id varchar(11)
+filer_type varchar(55)
+status varchar(20)
+effect_dt date
+naml varchar(200)
+namf varchar(45)
+namt varchar(128)
+nams varchar(10)
+adr1 varchar(55)
+adr2 varchar(55)
+city varchar(30)
+st char(2)
+zip4 varchar(10)
+phon varchar(20)
+fax varchar(20)
+email varchar(60)
+
+filers
+pk int primary key
+filer_id varchar(11)
+
+filings
+pk int primary key
+filing_id int
+filing_type int
+
+filing_period
+pk int primary key
+period_id int
+start_date date
+end_date date
+period_type int
+per_grp_type int
+period_desc varchar(255)
+deadline date
+
+filer_acronyms
+pk int primary key
+acronym varchar(32)
+filer_id varchar(11)
+
+filer_address
+pk int primary key
+filer_id varchar(11)
+adrid int
+effect_dt date
+add_type int
+session_id int
+
+filer_ethics_class
+pk int primary key
+filer_id varchar(11)
+session_id int
+ethics_date date
+
+filer_filings
+pk int primary key
+filer_id varchar(11)
+filing_id int
+period_id int
+form_id varchar(7)
+filing_sequence int
+filing_date date
+stmnt_type int
+stmnt_status int
+session_id int
+user_id varchar(12)
+special_audit int
+fine_audit int
+rpt_start date
+rpt_end date
+rpt_date date
+filing_type varchar(6)
+
+filer_interests
+pk int primary key
+filer_id varchar(11)
+session_id int
+interest_cd int
+effect_date date
+
+filer_links
+pk int primary key
+filer_id_a varchar(11)
+filer_id_b varchar(11)
+active_flg char(1)
+session_id int
+link_type int
+link_desc varchar(255)
+effect_dt date
+dominate_filer char(1)
+termination_dt date
+
+filer_status_types
+pk int primary key
+status_type varchar(3)
+status_desc varchar(100)
+
+filer_to_filer_type
+pk int primary key
+filer_id varchar(11)
+filer_type int
+active char(1)
+race int
+session_id int
+category int
+category_type int
+sub_category int
+effect_dt datetime
+sub_category_type int
+election_type int
+sub_category_a char(1)
+nyq_dt date
+party_cd int
+county_cd int
+district_cd int
+
+filer_types
+pk int primary key
+filer_type int
+description varchar(255)
+grp_type int
+calc_use char(1)
+grace_period int
+
+filer_xref
+pk int primary key
+filer_id varchar(11)
+xref_id varchar(32)
+effect_dt date
+migration_source varchar(50)
+
+group_types
+pk int primary key
+grp_id int
+grp_name varchar(128)
+grp_desc varchar(255)
+
+hdr
+pk int primary key
+filing_id int
+amend_id int
+rec_type varchar(4)
+ef_type varchar(3)
+state_cd varchar(2)
+cal_ver varchar(4)
+soft_name varchar(90)
+soft_ver varchar(16)
+hdrcomment varchar(200)
+
+header
+pk int primary key
+line_number int
+form_id varchar(7)
+rec_type varchar(32)
+section_label varchar(64)
+comments1 varchar(128)
+comments2 varchar(128)
+label varchar(128)
+column_a decimal(12,2)
+column_b decimal(12,2)
+column_c decimal(12,2)
+show_c int
+show_b int
+
+image_links
+pk int primary key
+img_link_id int
+img_link_type int
+img_id int
+img_type int
+img_dt date
+
+latt
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+recip_naml varchar(200)
+recip_namf varchar(45)
+recip_namt varchar(10)
+recip_nams varchar(10)
+recip_city varchar(30)
+recip_st varchar(2)
+recip_zip4 varchar(10)
+pmt_date date
+amount decimal(12,2)
+cum_amt decimal(12,2)
+cumbeg_dt date
+memo_code varchar(1)
+memo_refno varchar(20)
+
+lccm
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+recip_naml varchar(200)
+recip_namf varchar(45)
+recip_namt varchar(10)
+recip_nams varchar(10)
+recip_city varchar(30)
+recip_st varchar(2)
+recip_zip4 varchar(10)
+recip_id varchar(9)
+ctrib_naml varchar(200)
+ctrib_namf varchar(45)
+ctrib_namt varchar(10)
+ctrib_nams varchar(10)
+ctrib_date date
+amount decimal(12,2)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+
+legislative_sessions
+pk int primary key
+session_id int
+begin_date date
+end_date date
+
+lemp
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+client_id varchar(9)
+cli_naml varchar(200)
+cli_namf varchar(45)
+cli_namt varchar(10)
+cli_nams varchar(10)
+cli_city varchar(30)
+cli_st char(2)
+cli_zip4 varchar(10)
+cli_phon varchar(20)
+eff_date date
+con_period varchar(30)
+agencylist varchar(200)
+descrip varchar(100)
+subfirm_id varchar(9)
+sub_name varchar(200)
+sub_city varchar(30)
+sub_st varchar(2)
+sub_zip4 varchar(10)
+sub_phon varchar(20)
+
+lexp
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+recsubtype varchar(1)
+entity_cd varchar(3)
+payee_naml varchar(200)
+payee_namf varchar(45)
+payee_namt varchar(10)
+payee_nams varchar(10)
+payee_city varchar(30)
+payee_st varchar(2)
+payee_zip4 varchar(10)
+credcardco varchar(200)
+bene_name varchar(90)
+bene_posit varchar(90)
+bene_amt decimal(12,2)
+expn_dscr varchar(90)
+expn_date date
+amount decimal(12,2)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+
+loan
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+loan_type varchar(3)
+entity_cd varchar(3)
+lndr_naml varchar(200)
+lndr_namf varchar(45)
+lndr_namt varchar(10)
+lndr_nams varchar(10)
+loan_city varchar(30)
+loan_st varchar(2)
+loan_zip4 varchar(10)
+loan_date1 date
+loan_date2 date
+loan_amt1 decimal(12,2)
+loan_amt2 decimal(12,2)
+loan_amt3 decimal(12,2)
+loan_amt4 decimal(12,2)
+loan_rate varchar(30)
+loan_emp varchar(200)
+loan_occ varchar(60)
+loan_self varchar(1)
+cmte_id varchar(9)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st varchar(2)
+tres_zip4 varchar(10)
+intr_naml varchar(200)
+intr_namf varchar(45)
+intr_namt varchar(10)
+intr_nams varchar(10)
+intr_city varchar(30)
+intr_st varchar(2)
+intr_zip4 varchar(10)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+xref_schnm varchar(2)
+xref_match varchar(1)
+loan_amt5 decimal(12,2)
+loan_amt6 decimal(12,2)
+loan_amt7 decimal(12,2)
+loan_amt8 decimal(12,2)
+
+lobbying_chg_log
+pk int primary key
+filer_id varchar(11)
+change_no int
+session_id int
+log_dt date
+filer_type int
+correction_flg varchar(1)
+action varchar(32)
+attribute_changed varchar(45)
+ethics_dt date
+interests varchar(45)
+filer_full_name varchar(380)
+filer_city varchar(30)
+filer_st varchar(2)
+filer_zip varchar(10)
+filer_phone varchar(20)
+entity_type int
+entity_name varchar(380)
+entity_city varchar(30)
+entity_st varchar(2)
+entity_zip varchar(10)
+entity_phone varchar(20)
+entity_id int
+responsible_officer varchar(380)
+effect_dt date
+
+lobbyist_contributions1
+pk int primary key
+filer_id varchar(11)
+filing_period_start_dt date
+filing_period_end_dt date
+contribution_dt date
+recipient_name varchar(300)
+recipient_id int
+amount decimal(12,2)
+
+lobbyist_contributions2
+pk int primary key
+filer_id varchar(11)
+filing_period_start_dt date
+filing_period_end_dt date
+contribution_dt date
+recipient_name varchar(300)
+recipient_id int
+amount decimal(12,2)
+
+lobbyist_contributions3
+pk int primary key
+filer_id varchar(11)
+filing_period_start_dt date
+filing_period_end_dt date
+contribution_dt date
+recipient_name varchar(30)
+recipient_id int
+amount decimal(12,2)
+
+lobbyist_employer1
+pk int primary key
+employer_id int
+session_id int
+employer_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+interest_cd int
+interest_name varchar(300)
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_employer2
+pk int primary key
+employer_id int
+session_id int
+employer_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+interest_cd int
+interest_name varchar(300)
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_employer3
+pk int primary key
+employer_id int
+session_id int
+employer_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+interest_cd int
+interest_name varchar(300)
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_employer_firms1
+pk int primary key
+employer_id int
+firm_id int
+firm_name varchar(400)
+session_id int
+termination_dt date
+
+lobbyist_employer_firms2
+pk int primary key
+employer_id int
+firm_id int
+firm_name varchar(400)
+session_id int
+termination_dt date
+
+lobbyist_emp_lobbyist1
+pk int primary key
+lobbyist_id int
+employer_id int
+lobbyist_last_name varchar(400)
+lobbyist_first_name varchar(400)
+employer_name varchar(400)
+session_id int
+
+lobbyist_emp_lobbyist2
+pk int primary key
+lobbyist_id int
+employer_id int
+lobbyist_last_name varchar(400)
+lobbyist_first_name varchar(400)
+employer_name varchar(400)
+session_id int
+
+lobbyist_firm1
+pk int primary key
+firm_id int
+session_id int
+firm_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_firm2
+pk int primary key
+firm_id int
+session_id int
+firm_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_firm3
+pk int primary key
+firm_id int
+session_id int
+firm_name varchar(300)
+current_qtr_amt decimal(12,2)
+session_total_amt decimal(12,2)
+contributor_id int
+session_yr_1 int
+session_yr_2 int
+yr_1_ytd_amt decimal(12,2)
+yr_2_ytd_amt decimal(12,2)
+qtr_1 decimal(12,2)
+qtr_2 decimal(12,2)
+qtr_3 decimal(12,2)
+qtr_4 decimal(12,2)
+qtr_5 decimal(12,2)
+qtr_6 decimal(12,2)
+qtr_7 decimal(12,2)
+qtr_8 decimal(12,2)
+
+lobbyist_firm_employer1
+pk int primary key
+firm_id int
+filing_id int
+filing_sequence int
+firm_name varchar(400)
+employer_name varchar(200)
+rpt_start date
+rpt_end date
+per_total decimal(12,2)
+cum_total decimal(12,2)
+lby_actvty varchar(200)
+ext_lby_actvty varchar(4000)
+
+lobbyist_firm_employer2
+pk int primary key
+firm_id int
+filing_id int
+filing_sequence int
+firm_name varchar(400)
+employer_name varchar(200)
+rpt_start date
+rpt_end date
+per_total decimal(12,2)
+cum_total decimal(12,2)
+lby_actvty varchar(200)
+ext_lby_actvty varchar(4000)
+
+lobbyist_firm_lobbyist1
+pk int primary key
+lobbyist_id int
+firm_id int
+lobbyist_last_name varchar(400)
+lobbyist_first_name varchar(400)
+firm_name varchar(400)
+session_id int
+
+lobbyist_firm_lobbyist2
+pk int primary key
+lobbyist_id int
+firm_id int
+lobbyist_last_name varchar(400)
+lobbyist_first_name varchar(400)
+firm_name varchar(400)
+session_id int
+
+lobby_amendments
+pk int primary key
+filing_id int
+amend_id int
+rec_type varchar(4)
+form_type varchar(8)
+exec_date date
+from_date date
+thru_date date
+add_l_cb varchar(1)
+add_l_eff date
+a_l_naml varchar(200)
+a_l_namf varchar(45)
+a_l_namt varchar(10)
+a_l_nams varchar(10)
+del_l_cb varchar(1)
+del_l_eff date
+d_l_naml varchar(200)
+d_l_namf varchar(45)
+d_l_namt varchar(10)
+d_l_nams varchar(10)
+add_le_cb varchar(1)
+add_le_eff date
+a_le_naml varchar(200)
+a_le_namf varchar(45)
+a_le_namt varchar(10)
+a_le_nams varchar(10)
+del_le_cb varchar(1)
+del_le_eff date
+d_le_naml varchar(200)
+d_le_namf varchar(45)
+d_le_namt varchar(10)
+d_le_nams varchar(10)
+add_lf_cb varchar(1)
+add_lf_eff date
+a_lf_name varchar(200)
+del_lf_cb varchar(1)
+del_lf_eff date
+d_lf_name varchar(200)
+other_cb varchar(1)
+other_eff date
+other_desc varchar(100)
+f606_yes varchar(1)
+f606_no varchar(1)
+
+lookup_codes
+pk int primary key
+code_type int
+code_id int
+code_desc varchar(255)
+
+loth
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+firm_name varchar(200)
+firm_city varchar(30)
+firm_st varchar(2)
+firm_zip4 varchar(10)
+firm_phon varchar(20)
+subj_naml varchar(200)
+subj_namf varchar(45)
+subj_namt varchar(10)
+subj_nams varchar(10)
+pmt_date date
+amount decimal(12,2)
+cum_amt decimal(12,2)
+memo_code varchar(1)
+memo_refno varchar(20)
+
+lpay
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+emplr_naml varchar(200)
+emplr_namf varchar(45)
+emplr_namt varchar(10)
+emplr_nams varchar(10)
+emplr_city varchar(30)
+emplr_st varchar(2)
+emplr_zip4 varchar(10)
+emplr_phon varchar(20)
+lby_actvty varchar(200)
+fees_amt decimal(12,2)
+reimb_amt decimal(12,2)
+advan_amt decimal(12,2)
+advan_dscr varchar(100)
+per_total decimal(12,2)
+cum_total decimal(12,2)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+emplr_id varchar(9)
+
+names
+pk int primary key
+namid int
+naml varchar(200)
+namf varchar(50)
+namt varchar(100)
+nams varchar(30)
+moniker varchar(30)
+moniker_pos int
+namm varchar(30)
+fullname varchar(200)
+naml_search varchar(200)
+
+rcpt
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type char(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd char(3)
+ctrib_naml varchar(200)
+ctrib_namf varchar(45)
+ctrib_namt varchar(10)
+ctrib_nams varchar(10)
+ctrib_city varchar(30)
+ctrib_st char(2)
+ctrib_zip4 varchar(10)
+ctrib_emp varchar(200)
+ctrib_occ varchar(60)
+ctrib_self char(1)
+tran_type char(1)
+rcpt_date date
+date_thru date
+amount decimal(12,2)
+cum_ytd decimal(12,2)
+cum_oth decimal(12,2)
+ctrib_dscr varchar(90)
+cmte_id varchar(9)
+tres_naml varchar(200)
+tres_namf varchar(45)
+tres_namt varchar(10)
+tres_nams varchar(10)
+tres_city varchar(30)
+tres_st char(2)
+tres_zip4 varchar(10)
+intr_naml varchar(200)
+intr_namf varchar(45)
+intr_namt varchar(10)
+intr_nams varchar(10)
+intr_city varchar(30)
+intr_st char(2)
+intr_zip4 varchar(10)
+intr_emp varchar(200)
+intr_occ varchar(60)
+intr_self char(1)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+office_cd char(3)
+offic_dscr varchar(40)
+juris_cd char(3)
+juris_dscr varchar(40)
+dist_no char(3)
+off_s_h_cd char(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd char(1)
+memo_code char(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+xref_schnm char(2)
+xref_match char(1)
+int_rate varchar(9)
+intr_cmteid varchar(9)
+
+received_filings
+pk int primary key
+filer_id varchar(11)
+filing_file_name varchar(60)
+received_date date
+filing_directory varchar(60)
+filing_id int
+form_id varchar(7)
+receive_comment varchar(120)
+
+reports
+pk int primary key
+rpt_id int
+rpt_name varchar(255)
+rpt_desc_ varchar(255)
+path varchar(255)
+data_object varchar(255)
+parms_flg_y_n varchar(1)
+rpt_type int
+parm_definition int
+
+s401
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+agent_naml varchar(200)
+agent_namf varchar(45)
+agent_namt varchar(10)
+agent_nams varchar(10)
+payee_naml varchar(200)
+payee_namf varchar(45)
+payee_namt varchar(10)
+payee_nams varchar(10)
+payee_city varchar(30)
+payee_st varchar(2)
+payee_zip4 varchar(10)
+amount decimal(12,2)
+aggregate decimal(12,2)
+expn_dscr varchar(90)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+office_cd varchar(3)
+offic_dscr varchar(40)
+juris_cd varchar(3)
+juris_dscr varchar(40)
+dist_no varchar(3)
+off_s_h_cd varchar(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd varchar(1)
+memo_code varchar(1)
+memo_refno varchar(20)
+bakref_tid varchar(20)
+
+s496
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+amount decimal(12,2)
+exp_date date
+expn_dscr varchar(90)
+memo_code varchar(1)
+memo_refno varchar(20)
+date_thru date
+
+s497
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(6)
+tran_id varchar(20)
+entity_cd varchar(3)
+enty_naml varchar(200)
+enty_namf varchar(45)
+enty_namt varchar(10)
+enty_nams varchar(10)
+enty_city varchar(30)
+enty_st varchar(2)
+enty_zip4 varchar(10)
+ctrib_emp varchar(200)
+ctrib_occ varchar(60)
+ctrib_self varchar(1)
+elec_date date
+ctrib_date date
+date_thru date
+amount decimal(12,2)
+cmte_id varchar(9)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+office_cd varchar(3)
+offic_dscr varchar(40)
+juris_cd varchar(3)
+juris_dscr varchar(40)
+dist_no varchar(3)
+off_s_h_cd varchar(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+memo_code varchar(1)
+memo_refno varchar(20)
+bal_id varchar(9)
+cand_id varchar(9)
+sup_off_cd varchar(1)
+sup_opp_cd varchar(1)
+
+s498
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+tran_id varchar(20)
+entity_cd varchar(3)
+cmte_id varchar(9)
+payor_naml varchar(200)
+payor_namf varchar(45)
+payor_namt varchar(10)
+payor_nams varchar(10)
+payor_city varchar(30)
+payor_st varchar(2)
+payor_zip4 varchar(10)
+date_rcvd date
+amt_rcvd decimal(12,2)
+cand_naml varchar(200)
+cand_namf varchar(45)
+cand_namt varchar(10)
+cand_nams varchar(10)
+office_cd varchar(3)
+offic_dscr varchar(40)
+juris_cd varchar(3)
+juris_dscr varchar(40)
+dist_no varchar(3)
+off_s_h_cd varchar(1)
+bal_name varchar(200)
+bal_num varchar(7)
+bal_juris varchar(40)
+sup_opp_cd varchar(1)
+amt_attrib decimal(12,2)
+memo_code varchar(1)
+memo_refno varchar(20)
+employer varchar(200)
+occupation varchar(60)
+selfemp_cb varchar(1)
+
+smry
+pk int primary key
+filing_id int
+amend_id int
+line_item varchar(8)
+rec_type varchar(4)
+form_type varchar(8)
+amount_a decimal(12,2)
+amount_b decimal(12,2)
+amount_c decimal(12,2)
+elec_dt date
+
+splt
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+pform_type varchar(8)
+ptran_id varchar(32)
+elec_date date
+elec_amount decimal(12,2)
+elec_code varchar(2)
+
+text_memo
+pk int primary key
+filing_id int
+amend_id int
+line_item int
+rec_type varchar(4)
+form_type varchar(8)
+ref_no varchar(20)
+text4000 varchar(4000)
+

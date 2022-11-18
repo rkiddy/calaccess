@@ -1,0 +1,19 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html lang="en">
+<head>
+    <title>OpenCalAccess</title>
+    {% include "styles.html" %}
+</head>
+<body>
+<div style="padding: 25px 25px 25px 25px;">
+    <h1>Filer ID: {{ filer_id }}</h1>
+    <p>PDF: <a href="{{ pdf }}">{{ pdf }}</a></p>
+    {% for table_result in tables %}
+    <tr>
+        <td>{{ table_result }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+</div>
+</body>
+</html>

@@ -1,0 +1,11 @@
+
+in debt:
+
+changed: 
+memo_code varchar(1)
+memo_refno varchar(2)
+
+to:
+memo_code varchar(10)
+memo_refno varchar(20)
+

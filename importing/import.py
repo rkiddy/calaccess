@@ -5,14 +5,25 @@ import os
 import re
 import time
 import traceback
+import sys
 
 import sqlalchemy as sa
 from sqlalchemy import create_engine
+
+sys.path.append('..')
+import common
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--include', type=str, help='Include files that match this pattern.')
 parser.add_argument('--skip', type=str, help='Skip files that include this pattern.')
 parser.add_argument('--increment', type=int, default=10000, help='Data frame building increment, default 10000')
+parser.add_argument('--include-after', action='store_true')
+parser.add_argument('--only-after', action='store_true')
+parser.add_argument('--include-olders', action='store_true')
+parser.add_argument('--only-olders', action='store_true')
+parser.add_argument('--run-checks', type=str, nargs="*")
+
+
 args = parser.parse_args()
 
 table_columns_data = None
@@ -46,23 +57,15 @@ def table_columns():
 cols = table_columns()
 
 
-col_types = {
-    'int': sa.INTEGER,
-    'varchar': sa.String,
-    'char': sa.String,
-    'date': sa.DATETIME,
-    'datetime': sa.DATETIME}
-
-
 def create_col_type(col_type):
 
     # could be 'int' or 'int NOT NULL'
     if col_type.startswith('int'):
-        return col_types['int']
+        return sa.INTEGER
     if col_type.startswith('date'):
-        return col_types['date']
+        return sa.DATETIME
     if col_type.startswith('datetime'):
-        return col_types['datetime']
+        return sa.DATETIME
 
     # will be like 'decimal(10,2)
     if col_type.startswith('decimal'):
@@ -183,12 +186,6 @@ def fix_parts(target, head, parts):
             if parts[0] == '2329423' and parts[1] == '0':
                 parts.pop(38)
 
-    # why is memo_code set to length 1 and memo_refno set to length 2?
-    # if target == 'debt':
-    #     if parts[29].startswith('PAY') and parts[28] == '':
-    #         parts.pop(28)
-    #         parts.append('')
-
     # these all target missing NAML values when this got pushed up.
     #
     fix_empty_naml('cvr_campaign_disclosure', target, parts, 6)
@@ -248,7 +245,6 @@ def fix_parts(target, head, parts):
     fix_empty_naml('s498', target, parts, 8)
     fix_empty_naml('s498', target, parts, 17)
 
-
     if len(parts) != len(cols[target]):
         return None
         # raise Exception(f"target: {target}, incorrect # columns")
@@ -272,6 +268,105 @@ def fix_parts(target, head, parts):
     return parts
 
 
+def tables():
+
+    file = open("tableCols.txt")
+
+    found_tables = list()
+
+    for line in file:
+        parts = line.strip().split(' ')
+        if len(parts) == 1:
+            found_tables.append(parts[0])
+
+    return sorted(found_tables)
+
+
+def should_exclude(table):
+
+    file = f"{table.upper()}_CD.TSV"
+
+    if args.include is not None:
+        if args.include not in file:
+            return True
+
+    if args.skip is not None:
+        if re.match(args.skip, file):
+            return True
+
+    return False
+
+
+def add_index_for_columns_in_tables(conn, col_name):
+    found_tables = common.tables_with_column(col_name)
+    for table in found_tables:
+        if should_exclude(table):
+            continue
+        if not common.index_exists_in_table(conn, table, col_name):
+            print(f"adding index for '{col_name}' to {table}")
+            conn.execute(f"alter table {table} add index({col_name})")
+
+
+def afters():
+
+    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
+
+    conn = engine.connect()
+
+    add_index_for_columns_in_tables(conn, 'filing_id')
+    add_index_for_columns_in_tables(conn, 'amend_id')
+    add_index_for_columns_in_tables(conn, 'line_item')
+    add_index_for_columns_in_tables(conn, 'filer_id')
+    add_index_for_columns_in_tables(conn, 'rec_type')
+    add_index_for_columns_in_tables(conn, 'form_type')
+    add_index_for_columns_in_tables(conn, 'filing_date')
+
+
+def olders():
+
+    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
+
+    conn = engine.connect()
+
+    for table in tables():
+        if common.table_has_column(table, 'filing_id'):
+            if common.table_has_column(table, 'amend_id'):
+
+                conn.execute(f"DROP TABLE IF EXISTS {table}_older;")
+                conn.execute(f"CREATE TABLE {table}_older LIKE {table}")
+
+                high_amends = dict()
+
+                rows = conn.execute(f"select filing_id, amend_id from {table}").fetchall()
+
+                for row in rows:
+                    filing_id = int(row['filing_id'])
+                    amend_id = int(row['amend_id'])
+                    if filing_id not in high_amends:
+                        high_amends[filing_id] = amend_id
+                    else:
+                        if amend_id > high_amends[filing_id]:
+                            high_amends[filing_id] = amend_id
+
+                for filing_id in high_amends:
+
+                    hi_amend_id = high_amends[filing_id]
+                    if hi_amend_id == 0:
+                        continue
+
+                    stmt = f"""
+                    insert into {table}_older select * from {table}
+                    where filing_id = {filing_id} and amend_id < {hi_amend_id}
+                    """
+                    conn.execute(stmt)
+
+                    stmt = f"""
+                    delete from {table}
+                    where filing_id = {filing_id} and amend_id < {hi_amend_id}
+                    """
+                    conn.execute(stmt)
+
+
 def import_data():
 
     engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
@@ -289,25 +384,21 @@ def import_data():
 
     for file in os.listdir(data_dir()):
 
+        target = file.replace('_CD.TSV', '').lower()
+
         if not re.match(r".*_CD.TSV", file):
             continue
 
-        if args.include is not None:
-            if args.include not in file:
-                continue
-
-        if args.skip is not None:
-            if re.match(args.skip, file):
-                continue
+        if should_exclude(target):
+            continue
 
         print(f"\nfile: {file}")
-
-        target = file.replace('_CD.TSV', '').lower()
         print(f"target: {target}")
 
-        engine.execute(f"DROP TABLE IF EXISTS {target};")
+        conn.execute(f"DROP TABLE IF EXISTS {target};")
+        conn.execute(f"DROP TABLE IF EXISTS {target}_older;")
 
-        engine.execute(f"""
+        conn.execute(f"""
             insert into file_imports values (
                  {import_pk},
                  '{data_dir()}/{file}',
@@ -317,6 +408,10 @@ def import_data():
         lines_read = 0
         head = None
 
+        last_filername = []
+
+        useless = 0
+
         try:
             # if we read as 'r', then lines with '\r\r\n' come out as 2 lines.
             data_file = open(f"{data_dir()}/{file}", 'rb')
@@ -324,6 +419,9 @@ def import_data():
             errors = 0
 
             for line in data_file:
+
+                if lines_read == 64056:
+                    useless += 1
 
                 # there are lines that end in, for instance, '\r\r\n'.
                 line_parts = line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')
@@ -338,12 +436,55 @@ def import_data():
                     lines_read += 1
                     continue
 
+                # FILERNAME_CD.TSV has problems with broken lines. Like this:
+                # ERROR: 1131228
+                # {
+                #     0 XREF_FILER_ID: |1449339|
+                #     1 FILER_ID: |1449339|
+                #     2 FILER_TYPE: |RECIPIENT COMMITTEE|
+                #     3 STATUS: |ACTIVE|				        ERROR: 1131229
+                #     4 EFFECT_DT: |07/15/2022|			        {
+                #     5 NAML: |MARROCCO FOR TRUSTEE 2022; RENA|	    0 XREF_FILER_ID: ||
+                #     6 NAMF: MISSING				                1 FILER_ID: ||
+                #     7 NAMT: MISSING				                2 FILER_TYPE: ||
+                #     8 NAMS: MISSING				                3 STATUS: ||
+                #     9 ADR1: MISSING				                4 EFFECT_DT: ||
+                #     10 ADR2: MISSING				                5 NAML: ||
+                #     11 CITY: MISSING				                6 NAMF: |VISTA |
+                #     12 ST: MISSING				                7 NAMT: |CA|
+                #     13 ZIP4: MISSING				                8 NAMS: |92084    |
+                #     14 PHON: MISSING				                9 ADR1: |7603328398|
+                #     15 FAX: MISSING				                10 ADR2: ||
+                #     16 EMAIL: MISSING				                11 CITY: |readyforrena@gmail.com|
+                #
+                # The two records need to be knit back together again.
+                #
+                if target == 'filername':
+
+                    if lines_read > 64050:
+                        useless += 1
+
+                    if len(last_filername) == 0 and len(line_parts) == 6:
+                        last_filername = line_parts.copy()
+                        lines_read += 1
+                        continue
+
+                    if len(line_parts) != 6 and len(line_parts) != 12:
+                        last_filername = []
+
+                    if len(last_filername) == 6 and len(line_parts) == 12:
+                        next_line_parts = last_filername
+                        next_line_parts.extend(line_parts[1:])
+                        last_filername = []
+                        line_parts = next_line_parts
+
                 line_parts = fix_parts(target, lhead, line_parts)
 
                 if line_parts is None:
                     print(f"ERROR: {lines_read}")
                     print(as_dict(head, line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')))
                     errors += 1
+                    lines_read += 1
                     continue
 
                 line_errors = check_types(target, line_parts)
@@ -373,18 +514,26 @@ def import_data():
             traceback.print_exc()
 
         finally:
-            engine.execute(f"""
+            conn.execute(f"""
                 update file_imports
                 set num_read = {lines_read}, error_count = {errors}
                 where pk = {import_pk};""")
 
             import_pk += 1
 
-    # to be done after:
-    #    sql_engine.execute(f"ALTER TABLE {target} ADD COLUMN pk INT FIRST;")
-    #    sql_engine.execute(f"UPDATE {target} CROSS JOIN (SELECT @pk:=0) AS init SET {target}.pk=@pk:=@pk+1;")
-    #    sql_engine.execute(f"ALTER TABLE {target} ADD PRIMARY KEY (pk);")
-
 
 if __name__ == '__main__':
-    import_data()
+
+    for run_check in args.run_checks:
+        print(f"check: {run_check}")
+
+    # if not args.only_after and not args.only_olders:
+    #     import_data()
+    #
+    # if args.include_after or args.only_after:
+    #     afters()
+    #
+    # if args.include_olders or args.only_olders:
+    #     olders()
+
+

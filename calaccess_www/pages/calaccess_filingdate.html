@@ -1,0 +1,37 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html lang="en">
+<head>
+    <title>OpenCalAccess</title>
+    {% include "styles.html" %}
+</head>
+<body>
+<div style="padding: 25px 25px 25px 25px;">
+    <table class="table">
+        <tr>
+            <th>Filing ID</th>
+            <th>Filer ID</th>
+            <th>Filer Name</th>
+            <th>Filer Name</th>
+            <th>Period</th>
+            <th>Form</th>
+            <th>Filing Seq</th>
+            <th>Rpt Start</th>
+            <th>Rpt End</th>
+        </tr>
+        {% for filing in calaccess_filing_date %}
+        <tr>
+            <td><a href="/calaccess/filing_raw/{{ filing.filing_id }}">{{ filing.filing_id }}</a></td>
+            <td><a href="/calaccess/filer_raw/{{ filing.filer_id }}">{{ filing.filer_id }}</a></td>
+            <td>{{ filing.full_name }}</td>
+            <td>{{ filing.filer_type }}</td>
+            <td>{{ filing.period }}</td>
+            <td>{{ filing.form_id }}</td>
+            <td>{{ filing.filing_seq }}</td>
+            <td>{{ filing.rpt_start }}</td>
+            <td>{{ filing.rpt_end }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+</body>
+</html>
