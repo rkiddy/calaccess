@@ -3,6 +3,8 @@ import sys
 
 from sqlalchemy import create_engine, inspect
 
+import datetime as dt
+
 sys.path.append('..')
 import common
 
@@ -61,12 +63,56 @@ def build(param, extra=None):
         for row in rows:
             next_rows.append(
                 {
-                    'filing_date': row['filing_date'],
+                    'filing_date': row['filing_date'].strftime('%Y-%m-%d'),
                     'count': row['count']
                 }
             )
 
-        context['calaccess_front'] = rows
+        context['front_dates'] = next_rows
+
+        least_date = min([r['filing_date'] for r in next_rows])
+
+        sql = f"""
+        select filing_date, filing_id, form_id
+        from filer_filings
+        where filing_date >= '{least_date}' and
+            filing_date < '2030-01-01'
+        """
+
+        cols = {
+            'filing_date': 0,
+            'filing_id': 1,
+            'form_id': 2
+        }
+
+        rows = conn.execute(sql).fetchall()
+        data = common.fill_in_table(rows, cols)
+
+        # filings -> [filing_date] -> [form_id] -> # for the filing_date
+
+        filings = dict()
+        form_ids = list()
+
+        for datum in data:
+            form_ids.append(datum['form_id'])
+            filing_date = datum['filing_date'].strftime('%Y-%m-%d')
+            if filing_date not in filings:
+                filings[filing_date] = dict()
+            if datum['form_id'] not in filings[filing_date]:
+                filings[filing_date][datum['form_id']] = 1
+            else:
+                filings[filing_date][datum['form_id']] += 1
+
+        form_ids = sorted(list(set(form_ids)))
+
+        context['form_ids'] = form_ids
+
+        for filing_date in filings:
+            for form_id in form_ids:
+                if form_id not in filings[filing_date]:
+                    filings[filing_date][form_id] = 0
+
+        context['filing_counts'] = filings
 
         return context
 

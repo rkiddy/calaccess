@@ -14,12 +14,20 @@
                         <th>FilingDate</th>
                         <td>&nbsp;</td>
                         <th>Filings #</th>
+                        {% for form_id in form_ids %}
+                        <td>&nbsp;</td>
+                        <td>{{ form_id }}</td>
+                        {% endfor %}
                     </tr>
-                    {% for cfront in calaccess_front %}
+                    {% for cfront in front_dates %}
                         <tr>
                             <td><a href="/calaccess/filingdate/{{ cfront.filing_date }}">{{ cfront.filing_date }}</a></td>
                             <td>&nbsp;-&nbsp;</td>
                             <td>{{ cfront.count }}</td>
+                            {% for form_id in form_ids %}
+                            <td>&nbsp;&nbsp;</td>
+                            <td>{{ filing_counts[cfront.filing_date][form_id] }}</td>
+                            {% endfor %}
                         </tr>
                     {% endfor %}
                 </table>
