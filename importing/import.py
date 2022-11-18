@@ -17,12 +17,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--include', type=str, help='Include files that match this pattern.')
 parser.add_argument('--skip', type=str, help='Skip files that include this pattern.')
 parser.add_argument('--increment', type=int, default=10000, help='Data frame building increment, default 10000')
+parser.add_argument('--run-checks', type=str, nargs='*', help='Only check available: memo_refs')
 parser.add_argument('--include-after', action='store_true')
 parser.add_argument('--only-after', action='store_true')
 parser.add_argument('--include-olders', action='store_true')
 parser.add_argument('--only-olders', action='store_true')
-parser.add_argument('--run-checks', type=str, nargs="*")
-
 
 args = parser.parse_args()
 
@@ -367,6 +366,38 @@ def olders():
                     conn.execute(stmt)
 
 
+def check_memo_refs():
+
+    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
+
+    conn = engine.connect()
+
+    conn.execute("drop table if exists _memo_ref_nos")
+    conn.execute("create table _memo_ref_nos (ref_no varchar(20))")
+    conn.execute("alter table _memo_ref_nos add unique (ref_no)")
+
+    for table in common.tables_with_column('memo_refno'):
+        print(f"starting {table}...")
+        sql = f"select distinct(memo_refno) as ref_no from {table}"
+        for row in conn.execute(sql).fetchall():
+            sql = f"insert ignore into _memo_ref_nos values('{row['ref_no']}')"
+            conn.execute(sql)
+
+    row = conn.execute("""
+        select (
+            select count(0) from text_memo t1 left outer join _memo_ref_nos m1
+                on t1.ref_no = m1.ref_no
+                where t1.ref_no is not NULL and
+                    m1.ref_no is NULL) as missing,
+            (
+            select count(0) from _memo_ref_nos) as target;
+        """).fetchone()
+
+    print("memo_refno:")
+    print(f"    missing: {row['missing']}")
+    print(f"     target: {row['target']}")
+
+
 def import_data():
 
     engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
@@ -524,16 +555,19 @@ def import_data():
 
 if __name__ == '__main__':
 
-    for run_check in args.run_checks:
-        print(f"check: {run_check}")
+    if args.run_checks is not None:
+        if 'memo_refs' in args.run_checks:
+            check_memo_refs()
+        print("quitting...")
+        quit()
 
-    # if not args.only_after and not args.only_olders:
-    #     import_data()
-    #
-    # if args.include_after or args.only_after:
-    #     afters()
-    #
-    # if args.include_olders or args.only_olders:
-    #     olders()
+    if not args.only_after and not args.only_olders:
+        import_data()
+
+    if args.include_after or args.only_after:
+        afters()
+
+    if args.include_olders or args.only_olders:
+        olders()
 
 
