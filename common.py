@@ -1,4 +1,8 @@
 
+from dotenv import dotenv_values
+
+cfg = dotenv_values(".env")
+
 # rows is a result cursor, columns is a dictionary or key -> column number in rows.
 def fill_in_table(rows, columns):
     result = list()
@@ -20,10 +24,23 @@ def order_dicts_by_key(data, key):
     return results
 
 
+def tables():
+
+    file = open(f"{cfg['APP_HOME']}/tableCols.txt")
+
+    found_tables = list()
+
+    for line in file:
+        parts = line.strip().split(' ')
+        if len(parts) == 1:
+            found_tables.append(parts[0])
+
+    return sorted(found_tables)
+
+
 def tables_with_column(col_name):
 
-    #file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
-    file = open("../importing/tableCols.txt")
+    file = open(f"{cfg['APP_HOME']}/tableCols.txt")
 
     table_name = None
     found_tables = list()
@@ -40,8 +57,7 @@ def tables_with_column(col_name):
 
 def table_has_column(table_name, col_name):
 
-    # file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
-    file = open("../importing/tableCols.txt")
+    file = open(f"{cfg['APP_HOME']}/tableCols.txt")
 
     found_table_name = None
 
@@ -52,6 +68,31 @@ def table_has_column(table_name, col_name):
         if len(parts) > 1 and parts[0] == col_name:
             if found_table_name == table_name:
                 return True
+
+
+def table_columns():
+
+    tables = dict()
+
+    with open(f"{cfg['APP_HOME']}/tableCols.txt") as f:
+        for line in f:
+            parts = line.strip().split(' ')
+            if len(parts) == 1:
+                tname = parts[0]
+                tables[tname] = dict()
+            if len(parts) > 1:
+                cname = parts[0]
+                cdef = ' '.join(parts[1:])
+                tables[tname][cname] = cdef
+
+    f.close()
+
+    tables.pop('')
+
+    for table in tables:
+        tables[table].pop('pk')
+
+    return tables
 
 
 def index_exists_in_table(conn, table_name, col_name):

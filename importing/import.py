@@ -10,7 +10,11 @@ import sys
 import sqlalchemy as sa
 from sqlalchemy import create_engine
 
-sys.path.append('..')
+from dotenv import dotenv_values
+
+cfg = dotenv_values(".env")
+
+sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
 parser = argparse.ArgumentParser()
@@ -28,32 +32,7 @@ args = parser.parse_args()
 table_columns_data = None
 
 
-def table_columns():
-
-    tables = dict()
-
-    with open("tableCols.txt") as f:
-        for line in f:
-            parts = line.strip().split(' ')
-            if len(parts) == 1:
-                tname = parts[0]
-                tables[tname] = dict()
-            if len(parts) > 1:
-                cname = parts[0]
-                cdef = ' '.join(parts[1:])
-                tables[tname][cname] = cdef
-
-    f.close()
-
-    tables.pop('')
-
-    for table in tables:
-        tables[table].pop('pk')
-
-    return tables
-
-
-cols = table_columns()
+cols = common.table_columns()
 
 
 def create_col_type(col_type):
@@ -267,20 +246,6 @@ def fix_parts(target, head, parts):
     return parts
 
 
-def tables():
-
-    file = open("tableCols.txt")
-
-    found_tables = list()
-
-    for line in file:
-        parts = line.strip().split(' ')
-        if len(parts) == 1:
-            found_tables.append(parts[0])
-
-    return sorted(found_tables)
-
-
 def should_exclude(table):
 
     file = f"{table.upper()}_CD.TSV"
@@ -327,7 +292,7 @@ def olders():
 
     conn = engine.connect()
 
-    for table in tables():
+    for table in common.tables():
         if common.table_has_column(table, 'filing_id'):
             if common.table_has_column(table, 'amend_id'):
 
