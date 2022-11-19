@@ -3,20 +3,21 @@ import sys
 
 from sqlalchemy import create_engine, inspect
 
-import datetime as dt
+from dotenv import dotenv_values
 
-# sys.path.append('/home/ray/opencalaccess-data/')
+cfg = dotenv_values(".env")
+
+sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-engine = create_engine('mysql+pymysql://ray:alexna11@localhost/calaccess')
+engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@localhost/{cfg['DB']}")
 conn = engine.connect()
 inspector = inspect(engine)
 
 
 def tables_with_column(col_name):
 
-    # file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
-    file = open("../importing/tableCols.txt")
+    file = open(f"{cfg['APP_HOME']}/tableCols.txt")
 
     table_name = None
     found_tables = list()

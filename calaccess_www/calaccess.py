@@ -1,12 +1,19 @@
 
 import sys
 
+from dotenv import dotenv_values
+
 from flask import Flask
 from jinja2 import Environment, PackageLoader
 
-#sys.path.append('/home/ray/opencalaccess-data/calaccess_www')
-sys.path.append('..')
+cfg = dotenv_values(".env")
+
+sys.path.append(f"{cfg['APP_HOME']}")
+sys.path.append(f"{cfg['APP_HOME']}/calaccess_www")
+
+import common
 import data
+
 
 calaccess = Flask(__name__)
 application = calaccess
