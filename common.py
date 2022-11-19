@@ -22,7 +22,8 @@ def order_dicts_by_key(data, key):
 
 def tables_with_column(col_name):
 
-    file = open("tableCols.txt")
+    #file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
+    file = open("../importing/tableCols.txt")
 
     table_name = None
     found_tables = list()
@@ -39,7 +40,8 @@ def tables_with_column(col_name):
 
 def table_has_column(table_name, col_name):
 
-    file = open("tableCols.txt")
+    # file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
+    file = open("../importing/tableCols.txt")
 
     found_table_name = None
 

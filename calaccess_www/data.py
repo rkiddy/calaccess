@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, inspect
 
 import datetime as dt
 
-sys.path.append('..')
+# sys.path.append('/home/ray/opencalaccess-data/')
 import common
 
 engine = create_engine('mysql+pymysql://ray:alexna11@localhost/calaccess')
@@ -15,6 +15,7 @@ inspector = inspect(engine)
 
 def tables_with_column(col_name):
 
+    # file = open("/home/ray/opencalaccess-data/importing/tableCols.txt")
     file = open("../importing/tableCols.txt")
 
     table_name = None
