@@ -92,12 +92,12 @@ def build(param, extra=None, param2=None, extra2=None ):
         # totals -> [filing_date] -> # for the all forms for the filing_date
 
         filings = dict()
-        form_ids = list()
+        all_form_ids = list()
         totals = dict()
 
         for datum in data:
 
-            form_ids.append(datum['form_id'])
+            all_form_ids.append(datum['form_id'])
             filing_date = datum['filing_date'].strftime('%Y-%m-%d')
 
             if filing_date not in filings:
@@ -111,12 +111,25 @@ def build(param, extra=None, param2=None, extra2=None ):
             else:
                 filings[filing_date][datum['form_id']] += 1
 
-        form_ids = sorted(list(set(form_ids)))
+        all_form_ids = sorted(list(set(all_form_ids)))
 
         for filing_date in filings:
-            for form_id in form_ids:
+            for form_id in all_form_ids:
                 if form_id not in filings[filing_date]:
                     filings[filing_date][form_id] = 0
+
+        form_ids = dict()
+        form_ids['campaign'] = list()
+        form_ids['lobbyist'] = list()
+        form_ids['others'] = list()
+
+        for form_id in all_form_ids:
+            if form_id.startswith('F4'):
+                form_ids['campaign'].append(form_id)
+            elif form_id.startswith('F6'):
+                form_ids['lobbyist'].append(form_id)
+            else:
+                form_ids['others'].append(form_id)
 
         context['form_ids'] = form_ids
         context['totals'] = totals

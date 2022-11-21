@@ -1,0 +1,34 @@
+<table class="table">
+    <tr>
+        <td>
+            <table>
+                <tr>
+                    <th>FilingDate</th>
+                    <td>&nbsp;</td>
+                    <th>Filings&nbsp;#</th>
+                    {% for form_id in form_ids['lobbyist'] %}
+                    <td>&nbsp;</td>
+                    <td>{{ form_id }}</td>
+                    {% endfor %}
+                </tr>
+                {% for filing_date in filing_dates %}
+                    <tr>
+                        <td><a href="/calaccess/filingdate/{{ filing_date }}">{{ filing_date }}</a></td>
+                        <td>&nbsp;&nbsp;</td>
+                        <td>{{ totals[filing_date] }}</td>
+                        {% for form_id in form_ids['lobbyist'] %}
+                        <td>&nbsp;&nbsp;</td>
+                        <td>
+                            {% if filing_dates[filing_date][form_id] > 0 %}
+                            <a href="/calaccess/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filing_dates[filing_date][form_id] }}</a>
+                            {% else %}
+                            0
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                {% endfor %}
+            </table>
+        </td>
+    </tr>
+</table>

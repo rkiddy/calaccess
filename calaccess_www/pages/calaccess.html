@@ -3,6 +3,17 @@
 <head>
     <title>OpenCalAccess</title>
     {% include "styles.html" %}
+    <style>
+        .nav-tabs > li > a{
+            border: medium none;
+        }
+        .nav-tabs > li > a:hover{
+            background-color: #c7c9ed !important;
+            border: medium none;
+            border-radius: 0;
+            color:#fff;
+        }
+    </style>
 </head>
 <body>
 <div style="padding: 25px 25px 25px 25px;">
@@ -12,40 +23,21 @@
 	corrections and validation are NOT complete. Application logic is also not guaranteed.
 	<b>Use at your own risk!</b>
     </p>
-    <table class="table">
-        <tr>
-            <td>
-                <table>
-                    <tr>
-                        <th>FilingDate</th>
-                        <td>&nbsp;</td>
-                        <th>Filings&nbsp;#</th>
-                        {% for form_id in form_ids %}
-                        <td>&nbsp;</td>
-                        <td>{{ form_id }}</td>
-                        {% endfor %}
-                    </tr>
-                    {% for filing_date in filing_dates %}
-                        <tr>
-                            <td><a href="/filingdate/{{ filing_date }}">{{ filing_date }}</a></td>
-                            <td>&nbsp;&nbsp;</td>
-                            <td>{{ totals[filing_date] }}</td>
-                            {% for form_id in form_ids %}
-                            <td>&nbsp;&nbsp;</td>
-                            <td>
-                                {% if filing_dates[filing_date][form_id] > 0 %}
-                                <a href="/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filing_dates[filing_date][form_id] }}</a>
-                                {% else %}
-                                0
-                                {% endif %}
-                            </td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </table>
-            </td>
-        </tr>
-    </table>
+    <ul class="nav nav-tabs nav-justified">
+        <li><a data-target="#campaign" data-toggle="tab">Campaign Filings</a></li>
+        <li><a data-target="#lobbyist" data-toggle="tab">Lobbyist Filings</a></li>
+        <li><a data-target="#others" data-toggle="tab">Other FIlings</a></li>
+    </ul>
+    <div class="tab-content">
+        <div class="tab-pane active" id="campaign">
+            {% include "calaccess_filings_campaign.html" %}
+        </div>
+        <div class="tab-pane active" id="lobbyist">
+            {% include "calaccess_filings_lobbyist.html" %}
+        </div>
+        <div class="tab-pane active" id="others">
+            {% include "calaccess_filings_others.html" %}
+        </div>
 </div>
 </body>
 </html>

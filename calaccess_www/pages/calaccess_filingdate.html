@@ -24,8 +24,8 @@
         </tr>
         {% for filing in calaccess_filing_date %}
         <tr>
-            <td><a href="/filing_raw/{{ filing.filing_id }}">{{ filing.filing_id }}</a></td>
-            <td><a href="/filer_raw/{{ filing.filer_id }}">{{ filing.filer_id }}</a></td>
+            <td><a href="/calaccess/filing_raw/{{ filing.filing_id }}">{{ filing.filing_id }}</a></td>
+            <td><a href="/calaccess/filer_raw/{{ filing.filer_id }}">{{ filing.filer_id }}</a></td>
             <td>{{ filing.full_name }}</td>
             <td>{{ filing.filer_type }}</td>
             <td>{{ filing.period }}</td>
