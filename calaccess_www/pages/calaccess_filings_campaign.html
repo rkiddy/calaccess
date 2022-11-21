@@ -19,8 +19,8 @@
                         {% for form_id in form_ids['campaign'] %}
                         <td>&nbsp;&nbsp;</td>
                         <td>
-                            {% if filing_dates[filing_date][form_id] > 0 %}
-                            <a href="/calaccess/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filing_dates[filing_date][form_id] }}</a>
+                            {% if filings[filing_date][form_id] > 0 %}
+                            <a href="/calaccess/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filings[filing_date][form_id] }}</a>
                             {% else %}
                             0
                             {% endif %}

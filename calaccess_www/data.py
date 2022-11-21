@@ -131,9 +131,13 @@ def build(param, extra=None, param2=None, extra2=None ):
             else:
                 form_ids['others'].append(form_id)
 
+        filing_dates = sorted(list(filings.keys()))
+        filing_dates.reverse()
+
         context['form_ids'] = form_ids
         context['totals'] = totals
-        context['filing_dates'] = filings
+        context['filing_dates'] = filing_dates
+        context['filings'] = filings
 
         return context
 
