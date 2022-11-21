@@ -70,8 +70,6 @@ def build(param, extra=None, param2=None, extra2=None ):
                 }
             )
 
-        context['front_dates'] = next_rows
-
         least_date = min([r['filing_date'] for r in next_rows])
 
         sql = f"""
@@ -91,15 +89,23 @@ def build(param, extra=None, param2=None, extra2=None ):
         data = common.fill_in_table(rows, cols)
 
         # filings -> [filing_date] -> [form_id] -> # for the filing_date
+        # totals -> [filing_date] -> # for the all forms for the filing_date
 
         filings = dict()
         form_ids = list()
+        totals = dict()
 
         for datum in data:
+
             form_ids.append(datum['form_id'])
             filing_date = datum['filing_date'].strftime('%Y-%m-%d')
+
             if filing_date not in filings:
                 filings[filing_date] = dict()
+            if filing_date not in totals:
+                totals[filing_date] = 0
+
+            totals[filing_date] += 1
             if datum['form_id'] not in filings[filing_date]:
                 filings[filing_date][datum['form_id']] = 1
             else:
@@ -107,14 +113,14 @@ def build(param, extra=None, param2=None, extra2=None ):
 
         form_ids = sorted(list(set(form_ids)))
 
-        context['form_ids'] = form_ids
-
         for filing_date in filings:
             for form_id in form_ids:
                 if form_id not in filings[filing_date]:
                     filings[filing_date][form_id] = 0
 
-        context['filing_counts'] = filings
+        context['form_ids'] = form_ids
+        context['totals'] = totals
+        context['filing_dates'] = filings
 
         return context
 

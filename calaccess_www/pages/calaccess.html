@@ -19,22 +19,22 @@
                     <tr>
                         <th>FilingDate</th>
                         <td>&nbsp;</td>
-                        <th>Filings #</th>
+                        <th>Filings&nbsp;#</th>
                         {% for form_id in form_ids %}
                         <td>&nbsp;</td>
                         <td>{{ form_id }}</td>
                         {% endfor %}
                     </tr>
-                    {% for cfront in front_dates %}
+                    {% for filing_date in filing_dates %}
                         <tr>
-                            <td><a href="/filingdate/{{ cfront.filing_date }}">{{ cfront.filing_date }}</a></td>
+                            <td><a href="/filingdate/{{ filing_date }}">{{ filing_date }}</a></td>
                             <td>&nbsp;&nbsp;</td>
-                            <td>{{ cfront.count }}</td>
+                            <td>{{ totals[filing_date] }}</td>
                             {% for form_id in form_ids %}
                             <td>&nbsp;&nbsp;</td>
                             <td>
-                                {% if filing_counts[cfront.filing_date][form_id] > 0 %}
-                                <a href="/filingdate/{{ cfront.filing_date }}/form_id/{{ form_id }}">{{ filing_counts[cfront.filing_date][form_id] }}</a>
+                                {% if filing_dates[filing_date][form_id] > 0 %}
+                                <a href="/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filing_dates[filing_date][form_id] }}</a>
                                 {% else %}
                                 0
                                 {% endif %}
