@@ -3,6 +3,12 @@ Code for downloading data from Cal-Access and setting up access thereof.
 Consists of scripts for downloading and importing the data, and a flask
 application for displaying the data.
 
+The directories for the project parts are:
+
+- importing - the scripts that manage the data import process
+- imports_www - flask application to examine the results of am inpport
+- calaccess_www - flask application for navigating the data
+
 The download.py script is fairly simple. It will download the file from the
 California Secretary of State's site, un-tar it and get rid of the extra
 files.
