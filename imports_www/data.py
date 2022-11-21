@@ -43,18 +43,24 @@ def build(param):
 
         next_imports = dict()
 
-        for imported in imports:
+        for imp in imports:
 
-            dd = imported['filename'].split('/')[1][5:]
+            dd = imp['filename'].split('/')[1][5:]
             data_date = f"{dd[0:4]}-{dd[5:7]}-{dd[6:8]}"
-            imported['data_date'] = data_date
+            imp['data_date'] = data_date
 
-            target = imported['target']
-            if target not in next_imports:
-                next_imports[target] = imported
+            if imp['num_lines'] == 0:
+                imp['diff'] = 0
             else:
-                if imported['import_dt'] > next_imports[target]['import_dt']:
-                    next_imports[target] = imported
+                imp['diff'] = (imp['num_lines'] - imp['num_read']) / imp['num_lines']
+            imp['diff'] = int(imp['diff'] * 1000) / 1000
+
+            target = imp['target']
+            if target not in next_imports:
+                next_imports[target] = imp
+            else:
+                if imp['import_dt'] > next_imports[target]['import_dt']:
+                    next_imports[target] = imp
 
         context['imports'] = common.order_dicts_by_key(list(next_imports.values()), 'target')
 
