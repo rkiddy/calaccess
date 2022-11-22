@@ -6,6 +6,14 @@
 </head>
 <body>
 <div style="padding: 25px 25px 25px 25px;">
+    <p>
+        Select:
+        <select name="prefix_select" class="Input">
+            {% for prefix in import_dates %}
+            <option value="{{ prefix }}">{{ prefix }}</option>
+            {% endfor %}
+        </select>
+    </p>
     <table class="table">
         <tr>
             <th>DataDate</th>

@@ -9,6 +9,11 @@ import traceback
 import pandas as pd
 from sqlalchemy import create_engine
 
+
+from dotenv import dotenv_values
+
+cfg = dotenv_values(".env")
+
 dir = dt.datetime.now().strftime("data/data_%Y%m%d/")
 print(f"dir: {dir}")
 
@@ -51,12 +56,11 @@ dbname="ca_calaccess"
 uname="ray"
 pwd="alexna11"
 
-engine = create_engine("mysql+pymysql://ray:alexna11@localhost/ca_calaccess"
-                       .format(host=hostname, db=dbname, user=uname, pw=pwd))
+engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
 
 conn = engine.connect()
 
-sql = "select max(pk) as pk from files;"
+sql = "select max(pk) as pk from _files;"
 row = conn.execute(sql).fetchone()
 max_pk = int(row['pk'])
 
@@ -64,7 +68,7 @@ idx = 0
 
 found = list()
 
-for row in conn.execute(f"select filename from files where filename like '{dir}%%';").fetchall():
+for row in conn.execute(f"select filename from _files where filename like '{dir}%%';").fetchall():
     found.append(row['filename'])
 
 files = [f"{dir}dbwebexport.zip"]
@@ -95,7 +99,7 @@ for file in files:
 
         target = file.lower().replace('_cd.tsv', '').split('/')[-1]
 
-        sql = "insert into files values (_PK_, '_FILENAME_', _BYTES_, '_LASTMOD_', _LINES_, '_DGST_', _TGT_);"
+        sql = "insert into _files values (_PK_, '_FILENAME_', _BYTES_, '_LASTMOD_', _LINES_, '_DGST_', _TGT_);"
 
         sql = sql.replace('_PK_', str(max_pk+idx))
         sql = sql.replace('_FILENAME_', file)

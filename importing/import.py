@@ -11,6 +11,9 @@ import sqlalchemy as sa
 from sqlalchemy import create_engine
 
 from dotenv import dotenv_values
+from multiprocessing import current_process
+
+from p_tqdm import p_map
 
 cfg = dotenv_values(".env")
 
@@ -18,14 +21,20 @@ sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--include', type=str, help='Include files that match this pattern.')
-parser.add_argument('--skip', type=str, help='Skip files that include this pattern.')
-parser.add_argument('--increment', type=int, default=10000, help='Data frame building increment, default 10000')
-parser.add_argument('--run-checks', type=str, nargs='*', help='Only check available: memo_refs')
+parser.add_argument('--include', type=str, nargs='*',
+                    help='Include files that match this pattern.')
+parser.add_argument('--skip', type=str, nargs='*',
+                    help='Skip files that include this pattern.')
+parser.add_argument('--increment',type=int, default=10000,
+                    help='Data frame building increment, default 10000')
+parser.add_argument('--run-checks', type=str, nargs='*',
+                    help='Only check available: memo_refs')
+parser.add_argument('--use-fixes', type=str, nargs='*',
+                    help="Use file, from errors, where the errors are fixed.")
 parser.add_argument('--include-after', action='store_true')
 parser.add_argument('--only-after', action='store_true')
 parser.add_argument('--include-olders', action='store_true')
-parser.add_argument('--only-olders', action='store_true')
+parser.add_argument('--no-threads', action='store_true')
 
 args = parser.parse_args()
 
@@ -164,6 +173,29 @@ def fix_parts(target, head, parts):
             if parts[0] == '2329423' and parts[1] == '0':
                 parts.pop(38)
 
+    # this seems to get a variable number of tabs after, even when all the data is fine.
+    # check the filing_id, trans_id, cum_ytd, cum_oth and then pop off empty fields.
+    #
+    if target == 'rcpt':
+        if len(parts) > 63:
+            if re.match (r'^\d\d*$', parts[20]):
+                if re.match (r'^\d\d*$', parts[21]):
+                    if re.match(r'^\d\d*$', parts[0]):
+                        if re.match(r'^\d\d*$', parts[5]):
+                            while len(parts) > 63 and parts[-1] == '':
+                                parts.pop()
+
+    # same thing here, variable number of tabs.
+    #
+    if target == 'cvr_campaign_disclosure':
+        if len(parts) > 86:
+            if parts[37] in ['Y','N']:
+                if parts[38] in ['Y', 'N']:
+                    if parts[39] in ['Y', 'N']:
+                        if parts[40] in ['Y', 'N']:
+                            while len(parts) > 86 and parts[-1] == '':
+                                parts.pop()
+
     # these all target missing NAML values when this got pushed up.
     #
     fix_empty_naml('cvr_campaign_disclosure', target, parts, 6)
@@ -251,12 +283,21 @@ def should_exclude(table):
     file = f"{table.upper()}_CD.TSV"
 
     if args.include is not None:
-        if args.include not in file:
-            return True
+        for inc in args.include:
+            if inc in file:
+                return False
+
+        return True
 
     if args.skip is not None:
-        if re.match(args.skip, file):
-            return True
+
+        should = False
+
+        for skip in args.skip:
+            if re.match(skip, file):
+                should = True
+
+        return should
 
     return False
 
@@ -273,7 +314,7 @@ def add_index_for_columns_in_tables(conn, col_name):
 
 def afters():
 
-    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
 
     conn = engine.connect()
 
@@ -286,54 +327,9 @@ def afters():
     add_index_for_columns_in_tables(conn, 'filing_date')
 
 
-def olders():
-
-    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
-
-    conn = engine.connect()
-
-    for table in common.tables():
-        if common.table_has_column(table, 'filing_id'):
-            if common.table_has_column(table, 'amend_id'):
-
-                conn.execute(f"DROP TABLE IF EXISTS {table}_older;")
-                conn.execute(f"CREATE TABLE {table}_older LIKE {table}")
-
-                high_amends = dict()
-
-                rows = conn.execute(f"select filing_id, amend_id from {table}").fetchall()
-
-                for row in rows:
-                    filing_id = int(row['filing_id'])
-                    amend_id = int(row['amend_id'])
-                    if filing_id not in high_amends:
-                        high_amends[filing_id] = amend_id
-                    else:
-                        if amend_id > high_amends[filing_id]:
-                            high_amends[filing_id] = amend_id
-
-                for filing_id in high_amends:
-
-                    hi_amend_id = high_amends[filing_id]
-                    if hi_amend_id == 0:
-                        continue
-
-                    stmt = f"""
-                    insert into {table}_older select * from {table}
-                    where filing_id = {filing_id} and amend_id < {hi_amend_id}
-                    """
-                    conn.execute(stmt)
-
-                    stmt = f"""
-                    delete from {table}
-                    where filing_id = {filing_id} and amend_id < {hi_amend_id}
-                    """
-                    conn.execute(stmt)
-
-
 def check_memo_refs():
 
-    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
 
     conn = engine.connect()
 
@@ -363,20 +359,228 @@ def check_memo_refs():
     print(f"     target: {row['target']}")
 
 
-def import_data():
+def import_fixes(filenames):
 
-    engine = create_engine("mysql+pymysql://ray:alexna11@localhost/calaccess")
-
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
     conn = engine.connect()
 
-    row = conn.execute("select max(pk) as pk from file_imports;").fetchone()
+    rows = dict()
+    errors_seen = 0
+    in_dict = False
+
+    for filename in filenames:
+
+        file = open(filename, 'r')
+        for line in file:
+            line = line.strip()
+            parts = line.split(' ')
+
+            if in_dict and len(parts) == 3 and re.match(r'^\d*', parts[0]):
+                key = parts[1]
+                value = parts[2].strip('|')
+                rows[table_name][-1][key] = value
+
+            if parts[0] == 'target:':
+                table_name = parts[1]
+                print(f"table_name: {table_name}")
+
+            if parts[0] == '{':
+                errors_seen += 1
+
+            if parts[0] == '{' and parts[-1] == 'FIXED':
+                in_dict = True
+                if table_name not in rows:
+                    rows[table_name] = list()
+                    rows[table_name].append(dict())
+
+            if line == '}':
+                in_dict = False
+
+    print(f"errors_seen: {errors_seen}")
+    print(f"rows: {rows}")
+
+
+def import_data(info):
+
+    now = int(time.time())
+
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
+    conn = engine.connect()
+
+    filename = info['file']
+    import_pk = info['pk']
+
+    target = filename.replace('_CD.TSV', '').lower()
+
+    out_file = open(f"{data_dir()}/{target}_{import_pk}.txt", 'w')
+
+    conn.execute(f"DROP TABLE IF EXISTS {target};")
+    conn.execute(f"DROP TABLE IF EXISTS {target}_older;")
+
+    conn.execute(f"""
+        insert into _file_imports values (
+             {import_pk},
+             '{data_dir()}/{filename}',
+             0, 0,
+             from_unixtime({now}));""")
+
+    lines_read = 0
+    head = None
+
+    last_parts = []
+
+    try:
+        # if we read as 'r', then lines with '\r\r\n' come out as 2 lines.
+        data_file = open(f"{data_dir()}/{filename}", 'rb')
+        data_lines = list()
+        errors = 0
+
+        for line in data_file:
+
+            # there are lines that end in, for instance, '\r\r\n'.
+            line_parts = line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')
+
+            if line.decode(encoding='utf-8').startswith('2203954\t2\t11\tCVR2\tF603'):
+                pass
+
+            if head is None:
+                head = line_parts
+                lhead = [x.lower() for x in head]
+                table = create_table(engine, target, lhead)
+                lines_read += 1
+                continue
+
+            # FILERNAME_CD.TSV has problems with broken lines. Like this:
+            # ERROR: 1131228
+            # {
+            #     0 XREF_FILER_ID: |1449339|
+            #     1 FILER_ID: |1449339|
+            #     2 FILER_TYPE: |RECIPIENT COMMITTEE|
+            #     3 STATUS: |ACTIVE|				        ERROR: 1131229
+            #     4 EFFECT_DT: |07/15/2022|			        {
+            #     5 NAML: |MARROCCO FOR TRUSTEE 2022; RENA|	    0 XREF_FILER_ID: ||
+            #     6 NAMF: MISSING				                1 FILER_ID: ||
+            #     7 NAMT: MISSING				                2 FILER_TYPE: ||
+            #     8 NAMS: MISSING				                3 STATUS: ||
+            #     9 ADR1: MISSING				                4 EFFECT_DT: ||
+            #     10 ADR2: MISSING				                5 NAML: ||
+            #     11 CITY: MISSING				                6 NAMF: |VISTA |
+            #     12 ST: MISSING				                7 NAMT: |CA|
+            #     13 ZIP4: MISSING				                8 NAMS: |92084    |
+            #     14 PHON: MISSING				                9 ADR1: |7603328398|
+            #     15 FAX: MISSING				                10 ADR2: ||
+            #     16 EMAIL: MISSING				                11 CITY: |readyforrena@gmail.com|
+            #
+            # The two records need to be knit back together again.
+            #
+            if target == 'filername':
+
+                if len(last_parts) == 0 and len(line_parts) == 6:
+                    last_parts = line_parts.copy()
+                    lines_read += 1
+                    continue
+
+                if len(line_parts) != 6 and len(line_parts) != 12:
+                    last_parts = []
+
+                if len(last_parts) == 6 and len(line_parts) == 12:
+                    next_line_parts = last_parts
+                    next_line_parts.extend(line_parts[1:])
+                    last_parts = []
+                    line_parts = next_line_parts
+
+            # NAMES_CD.TSV also has problem with broken lines, like:
+            # ERROR: 467496
+            # {
+            #     0 NAMID: |1576948|
+            #     1 NAML: |SACRAMENTO VOTER PROJECT|   0 NAMID: ||
+            #     2 NAMF: MISSING                      1 NAML: ||
+            #     3 NAMT: MISSING                      2 NAMF: ||
+            #     4 NAMS: MISSING                      3 NAMT: ||
+            #     5 MONIKER: MISSING                   4 NAMS: ||
+            #     6 MONIKER_POS: MISSING               5 MONIKER: ||
+            #     7 NAMM: MISSING                      6 MONIKER_POS: ||
+            #     8 FULLNAME: MISSING                  7 NAMM: ||
+            #     9 NAML_SEARCH: MISSING               8 FULLNAME: |SACRAMENTO VOTER PROJECT|
+            # }                                        9 NAML_SEARCH: MISSING
+            #
+            # this next fix is not working...
+            if target == 'name':
+
+                if len(last_parts) == 0 and len(line_parts) == 2:
+                    last_parts = line_parts.copy()
+                    lines_read += 1
+                    continue
+
+                if len(line_parts) != 2 and len(line_parts) != 9:
+                    last_parts = []
+
+                if len(last_parts) == 2 and len(line_parts) == 9:
+                    next_line_parts = last_parts
+                    next_line_parts.extend(line_parts[1:8])
+                    last_parts = []
+                    line_parts = next_line_parts
+
+            # done with knitting together lines for now.
+
+            line_parts = fix_parts(target, lhead, line_parts)
+
+            if line_parts is None:
+                out_file.write(f"ERROR: {lines_read}\n")
+                out_file.write(as_dict(head, line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')) + '\n')
+                errors += 1
+                lines_read += 1
+                continue
+
+            line_errors = check_types(target, line_parts)
+
+            if line_errors > 0:
+                errors += line_errors
+                out_file.write(f"ERROR: {lines_read}\n")
+                out_file.write(as_dict(head, line_parts)+'\n')
+
+            else:
+                data_dict = dict(zip(lhead, line_parts))
+                data_lines.append(data_dict)
+                if len(data_lines) >= args.increment:
+                    out_file.write(f"now: {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    conn.execute(sa.insert(table, data_lines))
+                    data_lines.clear()
+
+            lines_read += 1
+
+        # handle rows left-over from the last incremenr
+        if len(data_lines) > 0:
+            conn.execute(sa.insert(table, data_lines))
+            data_lines.clear()
+
+    except:
+        out_file.write("EXCEPTION df:\n")
+        traceback.print_exc(file=out_file)
+        out_file.write("\n")
+
+    finally:
+        conn.execute(f"""
+            update _file_imports
+            set num_read = {lines_read}, error_count = {errors}
+            where pk = {import_pk};""")
+
+    out_file.close()
+
+
+def import_all_data():
+
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
+    conn = engine.connect()
+
+    row = conn.execute("select max(pk) as pk from _file_imports;").fetchone()
 
     if row['pk'] is None:
         import_pk = 1
     else:
         import_pk = int(row['pk']) + 1
 
-    now = int(time.time())
+    filenames = list()
 
     for file in os.listdir(data_dir()):
 
@@ -388,134 +592,16 @@ def import_data():
         if should_exclude(target):
             continue
 
-        print(f"\nfile: {file}")
-        print(f"target: {target}")
+        filenames.append({ 'pk': import_pk, 'file': file})
+        import_pk += 1
 
-        conn.execute(f"DROP TABLE IF EXISTS {target};")
-        conn.execute(f"DROP TABLE IF EXISTS {target}_older;")
+    print(f"filenames: {filenames}")
 
-        conn.execute(f"""
-            insert into file_imports values (
-                 {import_pk},
-                 '{data_dir()}/{file}',
-                 0, 0,
-                 from_unixtime({now}));""")
-
-        lines_read = 0
-        head = None
-
-        last_filername = []
-
-        useless = 0
-
-        try:
-            # if we read as 'r', then lines with '\r\r\n' come out as 2 lines.
-            data_file = open(f"{data_dir()}/{file}", 'rb')
-            data_lines = list()
-            errors = 0
-
-            for line in data_file:
-
-                if lines_read == 64056:
-                    useless += 1
-
-                # there are lines that end in, for instance, '\r\r\n'.
-                line_parts = line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')
-
-                if line.decode(encoding='utf-8').startswith('2203954\t2\t11\tCVR2\tF603'):
-                    pass
-
-                if head is None:
-                    head = line_parts
-                    lhead = [x.lower() for x in head]
-                    table = create_table(engine, target, lhead)
-                    lines_read += 1
-                    continue
-
-                # FILERNAME_CD.TSV has problems with broken lines. Like this:
-                # ERROR: 1131228
-                # {
-                #     0 XREF_FILER_ID: |1449339|
-                #     1 FILER_ID: |1449339|
-                #     2 FILER_TYPE: |RECIPIENT COMMITTEE|
-                #     3 STATUS: |ACTIVE|				        ERROR: 1131229
-                #     4 EFFECT_DT: |07/15/2022|			        {
-                #     5 NAML: |MARROCCO FOR TRUSTEE 2022; RENA|	    0 XREF_FILER_ID: ||
-                #     6 NAMF: MISSING				                1 FILER_ID: ||
-                #     7 NAMT: MISSING				                2 FILER_TYPE: ||
-                #     8 NAMS: MISSING				                3 STATUS: ||
-                #     9 ADR1: MISSING				                4 EFFECT_DT: ||
-                #     10 ADR2: MISSING				                5 NAML: ||
-                #     11 CITY: MISSING				                6 NAMF: |VISTA |
-                #     12 ST: MISSING				                7 NAMT: |CA|
-                #     13 ZIP4: MISSING				                8 NAMS: |92084    |
-                #     14 PHON: MISSING				                9 ADR1: |7603328398|
-                #     15 FAX: MISSING				                10 ADR2: ||
-                #     16 EMAIL: MISSING				                11 CITY: |readyforrena@gmail.com|
-                #
-                # The two records need to be knit back together again.
-                #
-                if target == 'filername':
-
-                    if lines_read > 64050:
-                        useless += 1
-
-                    if len(last_filername) == 0 and len(line_parts) == 6:
-                        last_filername = line_parts.copy()
-                        lines_read += 1
-                        continue
-
-                    if len(line_parts) != 6 and len(line_parts) != 12:
-                        last_filername = []
-
-                    if len(last_filername) == 6 and len(line_parts) == 12:
-                        next_line_parts = last_filername
-                        next_line_parts.extend(line_parts[1:])
-                        last_filername = []
-                        line_parts = next_line_parts
-
-                line_parts = fix_parts(target, lhead, line_parts)
-
-                if line_parts is None:
-                    print(f"ERROR: {lines_read}")
-                    print(as_dict(head, line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')))
-                    errors += 1
-                    lines_read += 1
-                    continue
-
-                line_errors = check_types(target, line_parts)
-
-                if line_errors > 0:
-                    errors += line_errors
-                    print(f"ERROR: {lines_read}")
-                    print(as_dict(head, line_parts))
-
-                else:
-                    data_dict = dict(zip(lhead, line_parts))
-                    data_lines.append(data_dict)
-                    if len(data_lines) >= args.increment:
-                        print(f"now: {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-                        conn.execute(sa.insert(table, data_lines))
-                        data_lines.clear()
-
-                lines_read += 1
-
-            # handle rows left-over from the last incremenr
-            if len(data_lines) > 0:
-                conn.execute(sa.insert(table, data_lines))
-                data_lines.clear()
-
-        except:
-            print("EXCEPTION df:")
-            traceback.print_exc()
-
-        finally:
-            conn.execute(f"""
-                update file_imports
-                set num_read = {lines_read}, error_count = {errors}
-                where pk = {import_pk};""")
-
-            import_pk += 1
+    if args.no_threads or len(filenames) == 1:
+        for entry in filenames:
+            import_data(entry)
+    else:
+        p_map(import_data, filenames)
 
 
 if __name__ == '__main__':
@@ -526,13 +612,15 @@ if __name__ == '__main__':
         print("quitting...")
         quit()
 
+    if args.use_fixes is not None:
+        print("use fixes YES")
+        import_fixes(args.use_fixes)
+        quit()
+
     if not args.only_after and not args.only_olders:
-        import_data()
+        import_all_data()
 
     if args.include_after or args.only_after:
         afters()
-
-    if args.include_olders or args.only_olders:
-        olders()
 
 
