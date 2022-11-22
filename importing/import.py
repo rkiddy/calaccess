@@ -617,7 +617,7 @@ if __name__ == '__main__':
         import_fixes(args.use_fixes)
         quit()
 
-    if not args.only_after and not args.only_olders:
+    if not args.only_after:
         import_all_data()
 
     if args.include_after or args.only_after:
