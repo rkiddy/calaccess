@@ -3,10 +3,14 @@ import sys
 
 from sqlalchemy import create_engine, inspect
 
-sys.path.append('..')
+from dotenv import dotenv_values
+
+cfg = dotenv_values(".env")
+
+sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-engine = create_engine('mysql+pymysql://ray:alexna11@localhost/calaccess')
+engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@localhost/{cfg['DB']}")
 conn = engine.connect()
 inspector = inspect(engine)
 

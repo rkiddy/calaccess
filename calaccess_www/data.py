@@ -10,7 +10,7 @@ cfg = dotenv_values(".env")
 sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@localhost/{cfg['DB']}")
+engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
 conn = engine.connect()
 inspector = inspect(engine)
 
@@ -70,12 +70,12 @@ def build(param, extra=None, param2=None, extra2=None ):
                 }
             )
 
-        least_date = min([r['filing_date'] for r in next_rows])
+        lowest_date = min([r['filing_date'] for r in next_rows])
 
         sql = f"""
         select filing_date, filing_id, form_id
         from filer_filings
-        where filing_date >= '{least_date}' and
+        where filing_date >= '{lowest_date}' and
             filing_date < '2030-01-01'
         """
 

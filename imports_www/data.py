@@ -10,7 +10,7 @@ cfg = dotenv_values(".env")
 sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@localhost/{cfg['DB']}")
+engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
 conn = engine.connect()
 inspector = inspect(engine)
 
@@ -63,5 +63,18 @@ def build(param):
                     next_imports[target] = imp
 
         context['imports'] = common.order_dicts_by_key(list(next_imports.values()), 'target')
+
+        file_prefixes = list()
+
+        sql = "select filename from _files where filename like '%%TSV'"
+
+        for row in conn.execute(sql).fetchall():
+            parts = row['filename'].split('/')
+            file_prefixes.append(parts[1])
+
+        context['import_dates'] = sorted(list(set(file_prefixes)))
+        context['import_dates'].reverse()
+
+        print(f"import_dates: {context['import_dates']}")
 
         return context
