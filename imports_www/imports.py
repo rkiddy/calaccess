@@ -1,10 +1,9 @@
 
 import sys
 
+from dotenv import dotenv_values
 from flask import Flask
 from jinja2 import Environment, PackageLoader
-
-from dotenv import dotenv_values
 
 cfg = dotenv_values(".env")
 
