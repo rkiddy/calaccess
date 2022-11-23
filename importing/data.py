@@ -1,9 +1,8 @@
 
 import sys
 
-from sqlalchemy import create_engine, inspect
-
 from dotenv import dotenv_values
+from sqlalchemy import create_engine, inspect
 
 cfg = dotenv_values(".env")
 

@@ -3,17 +3,14 @@ import argparse
 import datetime as dt
 import os
 import re
+import sys
 import time
 import traceback
-import sys
 
 import sqlalchemy as sa
-from sqlalchemy import create_engine
-
 from dotenv import dotenv_values
-from multiprocessing import current_process
-
 from p_tqdm import p_map
+from sqlalchemy import create_engine
 
 cfg = dotenv_values(".env")
 
@@ -25,7 +22,7 @@ parser.add_argument('--include', type=str, nargs='*',
                     help='Include files that match this pattern.')
 parser.add_argument('--skip', type=str, nargs='*',
                     help='Skip files that include this pattern.')
-parser.add_argument('--increment',type=int, default=10000,
+parser.add_argument('--increment', type=int, default=10000,
                     help='Data frame building increment, default 10000')
 parser.add_argument('--run-checks', type=str, nargs='*',
                     help='Only check available: memo_refs')
@@ -60,12 +57,12 @@ def create_col_type(col_type):
 
     # will be like 'varchar(63)'
     if col_type.startswith('varchar'):
-        length = int(col_type.split('(')[1].replace(')',''))
+        length = int(col_type.split('(')[1].replace(')', ''))
         return sa.VARCHAR(length=length)
 
     # will be like 'char(9)'
     if col_type.startswith('char'):
-        length = int(col_type.split('(')[1].replace(')',''))
+        length = int(col_type.split('(')[1].replace(')', ''))
         return sa.CHAR(length=length)
 
     raise Exception(f"Unregnized type fo column: {col_type}")
@@ -93,12 +90,12 @@ def as_dict(keys, values):
     klen = len(keys)
     vlen = len(values)
     if klen > vlen:
-        max = klen
+        local_max = klen
     else:
-        max = vlen
+        local_max = vlen
 
     buf = '{\n'
-    for idx in range(max):
+    for idx in range(local_max):
         if idx < klen and idx < vlen:
             buf = f"{buf}    {idx} {keys[idx]}: |{values[idx]}|\n"
         if klen > idx >= vlen:
@@ -139,13 +136,13 @@ def check_types(target, line_parts):
                 errs += 1
 
         if col_type.startswith('varchar'):
-            max_len = int(col_type.replace('varchar(','').replace(')',''))
+            max_len = int(col_type.replace('varchar(', '').replace(')', ''))
             if len(value) > max_len:
                 print(f"error for value: \"{value}\" of type {col_type}")
                 errs += 1
 
         if col_type == 'int':
-            if not re.match(r'^[\-]?\d*$', value):
+            if not re.match(r'^-?\d*$', value):
                 print(f"error for value: \"{value}\" of type {col_type}")
                 errs += 1
 
@@ -162,7 +159,7 @@ def fix_parts(target, head, parts):
 
     if target == 'cvr2_registration':
         if len(parts) == (len(cols[target]) + 1):
-            if parts[7] == '' and re.match(r'^[CLE]?\d\d*$', parts[8]):
+            if parts[7] == '' and re.match(r'^[CLE]?\d+$', parts[8]):
                 parts.pop(7)
 
     if target == 'cvr_registration':
@@ -178,10 +175,10 @@ def fix_parts(target, head, parts):
     #
     if target == 'rcpt':
         if len(parts) > 63:
-            if re.match (r'^\d\d*$', parts[20]):
-                if re.match (r'^\d\d*$', parts[21]):
-                    if re.match(r'^\d\d*$', parts[0]):
-                        if re.match(r'^\d\d*$', parts[5]):
+            if re.match (r'^\d+$', parts[20]):
+                if re.match (r'^\d+$', parts[21]):
+                    if re.match(r'^\d+$', parts[0]):
+                        if re.match(r'^\d+$', parts[5]):
                             while len(parts) > 63 and parts[-1] == '':
                                 parts.pop()
 
@@ -189,7 +186,7 @@ def fix_parts(target, head, parts):
     #
     if target == 'cvr_campaign_disclosure':
         if len(parts) > 86:
-            if parts[37] in ['Y','N']:
+            if parts[37] in ['Y', 'N']:
                 if parts[38] in ['Y', 'N']:
                     if parts[39] in ['Y', 'N']:
                         if parts[40] in ['Y', 'N']:
@@ -592,7 +589,7 @@ def import_all_data():
         if should_exclude(target):
             continue
 
-        filenames.append({ 'pk': import_pk, 'file': file})
+        filenames.append({'pk': import_pk, 'file': file})
         import_pk += 1
 
     print(f"filenames: {filenames}")
@@ -622,5 +619,3 @@ if __name__ == '__main__':
 
     if args.include_after or args.only_after:
         afters()
-
-

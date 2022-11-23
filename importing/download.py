@@ -7,10 +7,8 @@ import time
 import traceback
 
 import pandas as pd
-from sqlalchemy import create_engine
-
-
 from dotenv import dotenv_values
+from sqlalchemy import create_engine
 
 cfg = dotenv_values(".env")
 
