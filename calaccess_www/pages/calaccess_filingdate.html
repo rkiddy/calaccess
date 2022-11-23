@@ -3,46 +3,57 @@
 <head>
     <title>OpenCalAccess</title>
     {% include "styles.html" %}
+    {% include "datatable.html" %}
+    <script>
+        $(document).ready(function () {
+            $('#filings').DataTable();
+        });
+    </script>
 </head>
 <body>
 <div style="padding: 25px 25px 25px 25px;">
+    <p><a href="/calaccess">Home</a></p>
     <h2>
         Filing Date: {{ filing_date }}
         {% if form_id %}
         - Form: {{ form_id }}
         {% endif %}
     </h2>
-    <table class="table">
-        <tr>
-            <th>Filing ID</th>
-            <th>Filer ID</th>
-            <th>Filer Name</th>
-            <th>Filer Type</th>
-            <th>Period</th>
-            <th>Form</th>
-            <th>Amounts</th>
-            <th>Rpt Covers</th>
-        </tr>
-        {% for filing in calaccess_filing_date %}
-        <tr>
-            <td><a href="/calaccess/filing_raw/{{ filing.filing_id }}">{{ filing.filing_id }}</a></td>
-            <td><a href="/calaccess/filer_raw/{{ filing.filer_id }}">{{ filing.filer_id }}</a></td>
-            <td>{{ filing.full_name }}</td>
-            <td>{{ filing.filer_type }}</td>
-            <td>{{ filing.period }}</td>
-            <td>{{ filing.form_id }}</td>
-            <td>
-                {% for amount in filing.amounts %}
-                {{ amount }}:&nbsp;{{ filing.amounts[amount] }}
-                {% endfor %}
-            </td>
-            {% if filing.rpt_start == filing.rpt_end %}
-            <td>{{ filing.rpt_start }}</td>
-            {% else %}
-            <td>{{ filing.rpt_start }}<br/>{{ filing.rpt_end }}</td>
-            {% endif %}
-        </tr>
-        {% endfor %}
+    <table id="filings" class="table">
+        <thead>
+            <tr>
+                <th>Filing ID</th>
+                <th>Filer ID</th>
+                <th>Filer Name</th>
+                <th>Filer Type</th>
+                <th>Period</th>
+                <th>Form</th>
+                <th>Amounts</th>
+                <th>Rpt Covers</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for filing in calaccess_filing_date %}
+            <tr>
+                <td><a href="/calaccess/filing_raw/{{ filing.filing_id }}">{{ filing.filing_id }}</a></td>
+                <td><a href="/calaccess/filer_raw/{{ filing.filer_id }}">{{ filing.filer_id }}</a></td>
+                <td>{{ filing.full_name }}</td>
+                <td>{{ filing.filer_type }}</td>
+                <td>{{ filing.period }}</td>
+                <td>{{ filing.form_id }}</td>
+                <td>
+                    {% for amount in filing.amounts %}
+                    {{ amount }}:&nbsp;{{ filing.amounts[amount] }}
+                    {% endfor %}
+                </td>
+                {% if filing.rpt_start == filing.rpt_end %}
+                <td>{{ filing.rpt_start }}</td>
+                {% else %}
+                <td>{{ filing.rpt_start }}<br/>{{ filing.rpt_end }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
     </table>
 </div>
 </body>
