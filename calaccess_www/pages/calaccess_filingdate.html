@@ -6,7 +6,20 @@
     {% include "datatable.html" %}
     <script>
         $(document).ready(function () {
-            $('#filings').DataTable();
+            $('#filings').DataTable(
+                {
+                    "columns": [
+                        {"name": "Filing ID", "orderable": true},
+                        {"name": "Filer ID", "orderable": true},
+                        {"name": "Filer Name", "orderable": true},
+                        {"name": "Filer Type", "orderable": true},
+                        {"name": "Period", "orderable": true},
+                        {"name": "Form", "orderable": true},
+                        {"name": "Amounts", "orderable": false},
+                        {"name": "Rpt Covers", "orderable": false}
+                    ]
+                }
+            );
         });
     </script>
 </head>
