@@ -1,9 +1,10 @@
 
+import datetime as dt
 import sys
 
-from sqlalchemy import create_engine, inspect
-
+from dateutil.relativedelta import relativedelta
 from dotenv import dotenv_values
+from sqlalchemy import create_engine, inspect
 
 cfg = dotenv_values(".env")
 
@@ -48,14 +49,32 @@ def full_name(naml, namf, namt, nams):
     return buf
 
 
-def calacess_front(start_date = None, end_date = None):
+def calacess_front(lowest_date=None, highest_date=None):
     context = dict()
 
-    sql = """
-    select date(filing_date) as filing_date, count(0) as count from filer_filings
-    where filing_date < '2030-01-01'
-    group by filing_date order by filing_date desc limit 30
-    """
+    if lowest_date is not None and highest_date is None:
+        lowest = dt.strptime(lowest_date, '%Y-%m-%d')
+        highest = lowest + relativedelta(days=20)
+        highest_date = highest.strftime('%Y-%m-%d')
+
+    if lowest_date is None and highest_date is not None:
+        highest = dt.strptime(highest_date, '%Y-%m-%d')
+        lowest = highest - relativedelta(days=20)
+        lowest_date = lowest.strftime('%Y-%m-%d')
+
+    if lowest_date is not None and highest_date is not None:
+        sql = f"""
+        select date(filing_date) as filing_date, count(0) as count from filer_filings
+        where filing_date >= '{lowest_date}' and filing_date <= '{highest_date}'
+        group by filing_date order by filing_date desc
+        """
+
+    if lowest_date is None and highest_date is None:
+        sql = """
+        select date(filing_date) as filing_date, count(0) as count from filer_filings
+        where filing_date < '2030-01-01'
+        group by filing_date order by filing_date desc limit 20
+        """
 
     rows = conn.execute(sql).fetchall()
     next_rows = list()
@@ -67,13 +86,14 @@ def calacess_front(start_date = None, end_date = None):
             }
         )
 
-    lowest_date = min([r['filing_date'] for r in next_rows])
+    if len(next_rows) > 0:
+        lowest_date = min([r['filing_date'] for r in next_rows])
+        highest_date = max([r['filing_date'] for r in next_rows])
 
     sql = f"""
     select filing_date, filing_id, form_id
     from filer_filings
-    where filing_date >= '{lowest_date}' and
-        filing_date < '2030-01-01'
+    where filing_date >= '{lowest_date}' and filing_date < '{highest_date}'
     """
 
     cols = {
@@ -131,6 +151,16 @@ def calacess_front(start_date = None, end_date = None):
     filing_dates = sorted(list(filings.keys()))
     filing_dates.reverse()
 
+    next_end = (dt.datetime.strptime(highest_date, '%Y-%m-%d') + relativedelta(days=20)).strftime('%Y-%m-%d')
+    context['nexts'] = {
+        'next_start': highest_date,
+        'next_end': (dt.datetime.strptime(highest_date, '%Y-%m-%d') + relativedelta(days=20)).strftime('%Y-%m-%d'),
+        'prev_start': (dt.datetime.strptime(lowest_date, '%Y-%m-%d') - relativedelta(days=20)).strftime('%Y-%m-%d'),
+        'prev_end': lowest_date
+    }
+
+    print(f"nexts: {context['nexts']}")
+
     context['form_ids'] = form_ids
     context['totals'] = totals
     context['filing_dates'] = filing_dates
@@ -139,10 +169,26 @@ def calacess_front(start_date = None, end_date = None):
     return context
 
 
+def quarter_abbrev(period_start, period_desc):
+    if period_start is not None and period_desc is not None:
+        start_date = period_start.strftime("%Y")
+        period = f"{start_date} Q{period_desc[-1]}"
+    if period_start is not None and period_desc is None:
+        start_date = period_start.strftime("%Y")
+        period = f"{start_date} Q?"
+    if period_start is None and period_desc is not None:
+        period = f"???? Q{period_desc[-1]}"
+    if period_start is None and period_desc is None:
+        period = None
+    return period
+
+
 def calaccess_filing_date(filing_date, form_id=None):
 
     context = dict()
 
+    # select * from filer_filings outer left join filername;
+    #
     if form_id is None:
         sql = f"""
         select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
@@ -193,6 +239,7 @@ def calaccess_filing_date(filing_date, form_id=None):
     next_data = dict()
 
     for datum in data:
+
         filer_id = datum['filer_id']
 
         if filer_id not in next_data:
@@ -202,21 +249,32 @@ def calaccess_filing_date(filing_date, form_id=None):
             if effect_dt > next_data[filer_id]['effect_dt']:
                 next_data[filer_id] = datum
 
+    amt_tables = ['expn', 'latt', 'lccm', 'lexp', 'loth', 'rcpt', 's401', 's496', 's497']
+
     for filer_id in next_data:
+
         entry = next_data[filer_id]
+
         entry['full_name'] = full_name(entry['naml'], entry['namf'], entry['namt'], entry['nams'])
 
-        # either the period_start or desc might be NULL, or both.
-        if entry['period_start'] is not None and entry['period_desc'] is not None:
-            start_date = entry['period_start'].strftime("%Y")
-            entry['period'] = f"{start_date}&nbsp;Q{entry['period_desc'][-1]}"
-        if entry['period_start'] is not None and entry['period_desc'] is None:
-            start_date = entry['period_start'].strftime("%Y")
-            entry['period'] = f"{start_date}&nbsp;Q?"
-        if entry['period_start'] is None and entry['period_desc'] is not None:
-            entry['period'] = f"????&nbsp;Q{entry['period_desc'][-1]}"
-        if entry['period_start'] is None and entry['period_desc'] is None:
-            entry['period'] = None
+        entry['period'] = quarter_abbrev(entry['period_start'], entry['period_desc'])
+
+        amounts = dict()
+
+        for amt_table in amt_tables:
+            sql = f"select max(amend_id) amend_id from {amt_table} where filing_id = '{entry['filing_id']}'"
+            row = conn.execute(sql).fetchone()
+            if row['amend_id'] is not None:
+                amend_id = row['amend_id']
+                sql = f"""
+                    select sum(amount) sum from {amt_table}
+                    where filing_id = '{entry['filing_id']}' and
+                          amend_id = '{amend_id}'"""
+                row = conn.execute(sql).fetchone()
+                if row['sum'] is not None and str(row['sum']) != '0':
+                    amounts[amt_table] = "${:,.2f}".format(row['sum'])
+
+        entry['amounts'] = amounts
 
     context['filing_date'] = filing_date
     context['form_id'] = form_id

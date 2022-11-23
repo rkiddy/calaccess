@@ -1,12 +1,10 @@
 
 import sys
 
+import data
+from dotenv import dotenv_values
 from flask import Flask
 from jinja2 import Environment, PackageLoader
-
-import data
-
-from dotenv import dotenv_values
 
 cfg = dotenv_values(".env")
 
@@ -19,6 +17,13 @@ env = Environment(loader=PackageLoader('calaccess', 'pages'))
 def contracts_front():
     main = env.get_template('calaccess.html')
     context = data.calacess_front()
+    return main.render(**context)
+
+
+@calaccess.route(f"/{cfg['WWW']}<filing_date_low>/<filing_date_hi>")
+def contracts_front_dates(filing_date_low, filing_date_hi):
+    main = env.get_template('calaccess.html')
+    context = data.calacess_front(filing_date_low, filing_date_hi)
     return main.render(**context)
 
 
