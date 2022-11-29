@@ -29,15 +29,29 @@ def contracts_front_dates(filing_date_low, filing_date_hi):
 
 @calaccess.route(f"/{cfg['WWW']}filingdate/<filing_date>")
 def contracts_filingdate(filing_date):
-    main = env.get_template('calaccess_filingdate.html')
+    main = env.get_template('calaccess_filings.html')
     context = data.calaccess_filing_date(filing_date)
     return main.render(**context)
 
 
-@calaccess.route(f"/{cfg['WWW']}filingdate/<filing_date>/form_id/<form_id>")
+@calaccess.route(f"/{cfg['WWW']}filingdate/<filing_date>/<form_id>")
 def contracts_filingdate_form_id(filing_date, form_id):
-    main = env.get_template('calaccess_filingdate.html')
-    context = data.calaccess_filing_date(filing_date, form_id)
+    main = env.get_template('calaccess_filings.html')
+    context = data.calaccess_filing_date(filing_date, form_id=form_id)
+    return main.render(**context)
+
+
+@calaccess.route(f"/{cfg['WWW']}filingdates/<filing_date_1>/<filing_date_2>")
+def contracts_filingdates(filing_date_1, filing_date_2):
+    main = env.get_template('calaccess_filings.html')
+    context = data.calaccess_filing_date(filing_date_1, filing_date_2)
+    return main.render(**context)
+
+
+@calaccess.route(f"/{cfg['WWW']}filingdates/<filing_date_1>/<filing_date_2>/<form_id>")
+def contracts_filingdates_form_id(filing_date_1, filing_date_2, form_id):
+    main = env.get_template('calaccess_filings.html')
+    context = data.calaccess_filing_date(filing_date_1, filing_date_2, form_id)
     return main.render(**context)
 
 

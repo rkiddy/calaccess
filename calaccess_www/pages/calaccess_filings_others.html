@@ -20,7 +20,7 @@
                         <td>&nbsp;&nbsp;</td>
                         <td>
                             {% if filings[filing_date][form_id] > 0 %}
-                            <a href="/calaccess/filingdate/{{ filing_date }}/form_id/{{ form_id }}">{{ filings[filing_date][form_id] }}</a>
+                            <a href="/calaccess/filingdate/{{ filing_date }}/{{ form_id }}">{{ filings[filing_date][form_id] }}</a>
                             {% else %}
                             0
                             {% endif %}

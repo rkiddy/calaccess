@@ -151,7 +151,6 @@ def calacess_front(lowest_date=None, highest_date=None):
     filing_dates = sorted(list(filings.keys()))
     filing_dates.reverse()
 
-    next_end = (dt.datetime.strptime(highest_date, '%Y-%m-%d') + relativedelta(days=20)).strftime('%Y-%m-%d')
     context['nexts'] = {
         'next_start': highest_date,
         'next_end': (dt.datetime.strptime(highest_date, '%Y-%m-%d') + relativedelta(days=20)).strftime('%Y-%m-%d'),
@@ -159,8 +158,30 @@ def calacess_front(lowest_date=None, highest_date=None):
         'prev_end': lowest_date
     }
 
-    print(f"nexts: {context['nexts']}")
+    sql = """
+    select n1.form_type, n1.form_name,
+        count_2015, count_2016, count_2017, count_2018,
+        count_2019, count_2020, count_2021, count_2022, count_all
+    from _form_type_names n1
+    order by n1.form_type
+    """
+    cols = {
+        'form_type': 0,
+        'form_name': 1,
+        'count_2015': 2,
+        'count_2016': 3,
+        'count_2017': 4,
+        'count_2018': 5,
+        'count_2019': 6,
+        'count_2020': 7,
+        'count_2021': 8,
+        'count_2022': 9,
+        'count_all': 10,
+        'count': 11
+    }
+    form_types = [dict(row) for row in conn.execute(sql).fetchall()]
 
+    context['form_types'] = form_types
     context['form_ids'] = form_ids
     context['totals'] = totals
     context['filing_dates'] = filing_dates
@@ -183,7 +204,7 @@ def quarter_abbrev(period_start, period_desc):
     return period
 
 
-def calaccess_filing_date(filing_date, form_id=None):
+def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
 
     context = dict()
 
@@ -194,22 +215,42 @@ def calaccess_filing_date(filing_date, form_id=None):
         select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
             f1.filing_sequence as filing_seq, date(f1.rpt_start) as rpt_start,
             date(f1.rpt_end) as rpt_end, f2.filer_type, f2.naml, f2.namf, f2.namt,
-            f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc
+            f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc,
+            f4.form_name
         from filer_filings f1 left join filername f2 on f1.filer_id = f2.filer_id
             left join filing_period f3 on f1.period_id = f3.period_id
-                where f1.filing_date = '{filing_date}'
+            left join _form_type_names f4 on f1.form_id = f4.form_type
         """
+
+        if filing_date_2 is None:
+            sql = f"{sql} where f1.filing_date = '{filing_date_1}'"
+        else:
+            sql = f"""
+                {sql} where f1.filing_date >= '{filing_date_1}'
+                and f1.filing_date <= '{filing_date_2}'
+            """
     else:
         sql = f"""
         select f1.filing_id, f1.filer_id, f1.period_id, f1.form_id,
             f1.filing_sequence as filing_seq, date(f1.rpt_start) as rpt_start,
             date(f1.rpt_end) as rpt_end, f2.filer_type, f2.naml, f2.namf, f2.namt,
-            f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc
+            f2.nams, f2.city, f2.st, f2.zip4, f2.effect_dt, f3.start_date, f3.period_desc,
+            f4.form_name
         from filer_filings f1 left join filername f2 on f1.filer_id = f2.filer_id
             left join filing_period f3 on f1.period_id = f3.period_id
-                where f1.filing_date = '{filing_date}' and
-                    f1.form_id = '{form_id}'
+            left join _form_type_names f4 on f1.form_id = f4.form_type
+                where f1.form_id = '{form_id}' and
+                f1.form_id = f4.form_type
         """
+
+        if filing_date_2 is None:
+            sql = f"{sql} and f1.filing_date = '{filing_date_1}'"
+        else:
+            sql = f"""
+                {sql}
+                and f1.filing_date >= '{filing_date_1}'
+                and f1.filing_date <= '{filing_date_2}'
+            """
 
     rows = conn.execute(sql).fetchall()
 
@@ -231,22 +272,28 @@ def calaccess_filing_date(filing_date, form_id=None):
         'zip4': 14,
         'effect_dt': 15,
         'period_start': 16,
-        'period_desc': 17
+        'period_desc': 17,
+        'form_name': 18
     }
 
     data = common.fill_in_table(rows, cols)
 
     next_data = dict()
 
+    form_name = None
+
     for datum in data:
 
         filer_id = datum['filer_id']
+
+        if form_id is not None:
+            form_name = datum['form_name']
 
         if filer_id not in next_data:
             next_data[filer_id] = datum
         else:
             effect_dt = datum['effect_dt']
-            if effect_dt > next_data[filer_id]['effect_dt']:
+            if effect_dt is not None and effect_dt > next_data[filer_id]['effect_dt']:
                 next_data[filer_id] = datum
 
     amt_tables = ['expn', 'latt', 'lccm', 'lexp', 'loth', 'rcpt', 's401', 's496', 's497']
@@ -276,8 +323,11 @@ def calaccess_filing_date(filing_date, form_id=None):
 
         entry['amounts'] = amounts
 
-    context['filing_date'] = filing_date
+    context['filing_date'] = filing_date_1
+    context['filing_date_hi'] = filing_date_2
+
     context['form_id'] = form_id
+    context['form_name'] = form_name
 
     context['calaccess_filing_date'] = common.order_dicts_by_key(list(next_data.values()), 'filing_id')
 

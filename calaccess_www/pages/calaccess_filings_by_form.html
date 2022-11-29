@@ -1,0 +1,34 @@
+<table class="table">
+    <thead>
+    <tr>
+        <td>&nbsp;</td>
+        <td>2022 Total</td>
+        <td>2021 Total</td>
+        <td>2020 Total</td>
+        <td>2019 Total</td>
+        <td>2018 Total</td>
+        <td>2017 Total</td>
+        <td>2016 Total</td>
+        <td>2015 Total</td>
+        <td>Total</td>
+        <td>&nbsp;</td>
+    </tr>
+    </thead>
+    <tbody>
+    {% for form in form_types %}
+    <tr>
+        <td>{{ form.form_type }}</td>
+        <td><a href="/calaccess/filingdates/2022-01-01/2022-12-31/{{ form.form_type }}">{{ form.count_2022 }}</a></td>
+        <td><a href="/calaccess/filingdates/2021-01-01/2021-12-31/{{ form.form_type }}">{{ form.count_2021 }}</a></td>
+        <td><a href="/calaccess/filingdates/2020-01-01/2020-12-31/{{ form.form_type }}">{{ form.count_2020 }}</a></td>
+        <td><a href="/calaccess/filingdates/2019-01-01/2019-12-31/{{ form.form_type }}">{{ form.count_2019 }}</a></td>
+        <td><a href="/calaccess/filingdates/2018-01-01/2018-12-31/{{ form.form_type }}">{{ form.count_2018 }}</a></td>
+        <td><a href="/calaccess/filingdates/2017-01-01/2017-12-31/{{ form.form_type }}">{{ form.count_2017 }}</a></td>
+        <td><a href="/calaccess/filingdates/2016-01-01/2016-12-31/{{ form.form_type }}">{{ form.count_2016 }}</a></td>
+        <td><a href="/calaccess/filingdates/2015-01-01/2015-12-31/{{ form.form_type }}">{{ form.count_2015 }}</a></td>
+        <td>{{ form.count_all }}</td>
+        <td>{{ form.form_name }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>

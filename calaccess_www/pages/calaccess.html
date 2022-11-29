@@ -26,23 +26,37 @@
     <ul class="nav nav-tabs nav-justified">
         <li><a data-target="#campaign" data-toggle="tab">Campaign Filings</a></li>
         <li><a data-target="#lobbyist" data-toggle="tab">Lobbyist Filings</a></li>
-        <li><a data-target="#others" data-toggle="tab">Other FIlings</a></li>
+        <li><a data-target="#others" data-toggle="tab">Other Filings</a></li>
+        <li><a data-target="#by_form" data-toggle="tab">Filings By Form</a></li>
     </ul>
     <div class="tab-content">
         <div class="tab-pane active" id="campaign">
             {% include "calaccess_filings_campaign.html" %}
+            <p>
+                <a href="/calaccess/{{ nexts['prev_start'] }}/{{ nexts['prev_end'] }}">&lt;&lt;&lt;&nbsp;Previous</a>
+                -
+                <a href="/calaccess/{{ nexts['next_start'] }}/{{ nexts['next_end'] }}">Next&nbsp;&gt;&gt;&gt;</a>a>
+            </p>
         </div>
         <div class="tab-pane" id="lobbyist">
             {% include "calaccess_filings_lobbyist.html" %}
+            <p>
+                <a href="/calaccess/{{ nexts['prev_start'] }}/{{ nexts['prev_end'] }}">&lt;&lt;&lt;&nbsp;Previous</a>
+                -
+                <a href="/calaccess/{{ nexts['next_start'] }}/{{ nexts['next_end'] }}">Next&nbsp;&gt;&gt;&gt;</a>
+            </p>
         </div>
         <div class="tab-pane" id="others">
             {% include "calaccess_filings_others.html" %}
+            <p>
+                <a href="/calaccess/{{ nexts['prev_start'] }}/{{ nexts['prev_end'] }}">&lt;&lt;&lt;&nbsp;Previous</a>
+                -
+                <a href="/calaccess/{{ nexts['next_start'] }}/{{ nexts['next_end'] }}">Next&nbsp;&gt;&gt;&gt;</a>
+            </p>
+        </div>
+        <div class="tab-pane" id="by_form">
+            {% include "calaccess_filings_by_form.html" %}
         </div>
     </div>
-    <p>
-        <a href="/calaccess/{{ nexts['prev_start'] }}/{{ nexts['prev_end'] }}">&lt;&lt;&lt;&nbsp;Previous</a>
-        -
-        <a href="/calaccess/{{ nexts['next_start'] }}/{{ nexts['next_end'] }}">Next&nbsp;&gt;&gt;&gt;<a/>
-    </p>
 </body>
 </html>

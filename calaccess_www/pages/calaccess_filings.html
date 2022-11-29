@@ -27,9 +27,13 @@
 <div style="padding: 25px 25px 25px 25px;">
     <p><a href="/calaccess">Home</a></p>
     <h2>
+        {% if not filing_date_hi %}
         Filing Date: {{ filing_date }}
+        {% else %}
+        Filing Dates: {{ filing_date }} to {{ filing_date_hi }}
+        {% endif %}
         {% if form_id %}
-        - Form: {{ form_id }}
+        - Form: {{ form_name }}
         {% endif %}
     </h2>
     <table id="filings" class="table">
