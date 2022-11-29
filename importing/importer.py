@@ -17,29 +17,6 @@ cfg = dotenv_values(".env")
 sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--include', type=str, nargs='*',
-                    help='Include files that match this pattern.')
-parser.add_argument('--skip', type=str, nargs='*',
-                    help='Skip files that include this pattern.')
-parser.add_argument('--increment', type=int, default=10000,
-                    help='Data frame building increment, default 10000')
-parser.add_argument('--run-checks', type=str, nargs='*',
-                    help='Only check available: memo_refs')
-parser.add_argument('--use-fixes', type=str, nargs='*',
-                    help="Use file, from errors, where the errors are fixed.")
-parser.add_argument('--include-after', action='store_true')
-parser.add_argument('--only-after', action='store_true')
-parser.add_argument('--include-olders', action='store_true')
-parser.add_argument('--no-threads', action='store_true')
-
-args = parser.parse_args()
-
-table_columns_data = None
-
-
-cols = common.table_columns()
-
 
 def create_col_type(col_type):
 
@@ -107,15 +84,16 @@ def as_dict(keys, values):
 
 
 def data_dir():
-    d = sorted([dir for dir in os.listdir("data/") if dir.startswith('data_')])[-1]
+    d = sorted([d for d in os.listdir("data/") if re.match(r'^data_.*\.TSV', d)])[-1]
     return f"data/{d}/DATA"
 
 
-def fix_empty_naml(targeted, target, line_parts, idx):
+def fix_empty_naml(targeted, target, head, line_parts, idx):
     if target == targeted:
-        if len(line_parts) == (len(cols[target]) + 1):
+        if len(line_parts) == (len(head) + 1):
             if line_parts[idx].strip(' ') == '' and line_parts[idx+1] != '':
                 line_parts.pop(idx)
+    return line_parts
 
 
 def check_types(target, line_parts):
@@ -195,62 +173,62 @@ def fix_parts(target, head, parts):
 
     # these all target missing NAML values when this got pushed up.
     #
-    fix_empty_naml('cvr_campaign_disclosure', target, parts, 6)
-    fix_empty_naml('cvr_campaign_disclosure', target, parts, 26)
-    fix_empty_naml('cvr_campaign_disclosure', target, parts, 61)
-    fix_empty_naml('cvr_e530', target, parts, 5)
-    fix_empty_naml('cvr_e530', target, parts, 16)
-    fix_empty_naml('cvr_lobby_disclosure', target, parts, 7)
-    fix_empty_naml('cvr_lobby_disclosure', target, parts, 28)
-    fix_empty_naml('cvr_lobby_disclosure', target, parts, 32)
-    fix_empty_naml('cvr_lobby_disclosure', target, parts, 46)
-    fix_empty_naml('cvr_registration', target, parts, 7)
-    fix_empty_naml('cvr_registration', target, parts, 29)
-    fix_empty_naml('cvr_registration', target, parts, 33)
-    fix_empty_naml('cvr_so', target, parts, 6)
-    fix_empty_naml('cvr_so', target, parts, 26)
-    fix_empty_naml('cvr2_campaign_disclosure', target, parts, 13)
-    fix_empty_naml('cvr2_campaign_disclosure', target, parts, 23)
-    fix_empty_naml('cvr2_lobby_disclosure', target, parts, 4)
-    fix_empty_naml('cvr2_registration', target, parts, 8)
-    fix_empty_naml('cvr2_so', target, parts, 7)
-    fix_empty_naml('cvr3_verification_info', target, parts, 9)
-    fix_empty_naml('debt', target, parts, 7)
-    fix_empty_naml('debt', target, parts, 21)
-    fix_empty_naml('expn', target, parts, 7)
-    fix_empty_naml('expn', target, parts, 21)
-    fix_empty_naml('expn', target, parts, 26)
-    fix_empty_naml('expn', target, parts, 33)
-    fix_empty_naml('f501_502', target, parts, 13)
-    fix_empty_naml('f501_502', target, parts, 26)
-    fix_empty_naml('filername', target, parts, 5)
-    fix_empty_naml('latt', target, parts, 7)
-    fix_empty_naml('lccm', target, parts, 7)
-    fix_empty_naml('lccm', target, parts, 15)
-    fix_empty_naml('lemp', target, parts, 6)
-    fix_empty_naml('lexp', target, parts, 8)
-    fix_empty_naml('loan', target, parts, 8)
-    fix_empty_naml('loan', target, parts, 26)
-    fix_empty_naml('loan', target, parts, 33)
-    fix_empty_naml('lobby_amendments', target, parts, 9)
-    fix_empty_naml('lobby_amendments', target, parts, 15)
-    fix_empty_naml('lobby_amendments', target, parts, 21)
-    fix_empty_naml('lobby_amendments', target, parts, 27)
-    fix_empty_naml('loth', target, parts, 11)
-    fix_empty_naml('lpay', target, parts, 7)
-    fix_empty_naml('names', target, parts, 1)
-    fix_empty_naml('names', target, parts, 9)
-    fix_empty_naml('rcpt', target, parts, 7)
-    fix_empty_naml('rcpt', target, parts, 25)
-    fix_empty_naml('rcpt', target, parts, 32)
-    fix_empty_naml('rcpt', target, parts, 42)
-    fix_empty_naml('s401', target, parts, 6)
-    fix_empty_naml('s401', target, parts, 10)
-    fix_empty_naml('s401', target, parts, 20)
-    fix_empty_naml('s497', target, parts, 7)
-    fix_empty_naml('s497', target, parts, 22)
-    fix_empty_naml('s498', target, parts, 8)
-    fix_empty_naml('s498', target, parts, 17)
+    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 6)
+    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 26)
+    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 61)
+    parts = fix_empty_naml('cvr_e530', target, head, parts, 5)
+    parts = fix_empty_naml('cvr_e530', target, head, parts, 16)
+    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 7)
+    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 28)
+    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 32)
+    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 46)
+    parts = fix_empty_naml('cvr_registration', target, head, parts, 7)
+    parts = fix_empty_naml('cvr_registration', target, head, parts, 29)
+    parts = fix_empty_naml('cvr_registration', target, head, parts, 33)
+    parts = fix_empty_naml('cvr_so', target, head, parts, 6)
+    parts = fix_empty_naml('cvr_so', target, head, parts, 26)
+    parts = fix_empty_naml('cvr2_campaign_disclosure', target, head, parts, 13)
+    parts = fix_empty_naml('cvr2_campaign_disclosure', target, head, parts, 23)
+    parts = fix_empty_naml('cvr2_lobby_disclosure', target, head, parts, 4)
+    parts = fix_empty_naml('cvr2_registration', target, head, parts, 8)
+    parts = fix_empty_naml('cvr2_so', target, head, parts, 7)
+    parts = fix_empty_naml('cvr3_verification_info', target, head, parts, 9)
+    parts = fix_empty_naml('debt', target, head, parts, 7)
+    parts = fix_empty_naml('debt', target, head, parts, 21)
+    parts = fix_empty_naml('expn', target, head, parts, 7)
+    parts = fix_empty_naml('expn', target, head, parts, 21)
+    parts = fix_empty_naml('expn', target, head, parts, 26)
+    parts = fix_empty_naml('expn', target, head, parts, 33)
+    parts = fix_empty_naml('f501_502', target, head, parts, 13)
+    parts = fix_empty_naml('f501_502', target, head, parts, 26)
+    parts = fix_empty_naml('filername', target, head, parts, 5)
+    parts = fix_empty_naml('latt', target, head, parts, 7)
+    parts = fix_empty_naml('lccm', target, head, parts, 7)
+    parts = fix_empty_naml('lccm', target, head, parts, 15)
+    parts = fix_empty_naml('lemp', target, head, parts, 6)
+    parts = fix_empty_naml('lexp', target, head, parts, 8)
+    parts = fix_empty_naml('loan', target, head, parts, 8)
+    parts = fix_empty_naml('loan', target, head, parts, 26)
+    parts = fix_empty_naml('loan', target, head, parts, 33)
+    parts = fix_empty_naml('lobby_amendments', target, head, parts, 9)
+    parts = fix_empty_naml('lobby_amendments', target, head, parts, 15)
+    parts = fix_empty_naml('lobby_amendments', target, head, parts, 21)
+    parts = fix_empty_naml('lobby_amendments', target, head, parts, 27)
+    parts = fix_empty_naml('loth', target, head, parts, 11)
+    parts = fix_empty_naml('lpay', target, head, parts, 7)
+    parts = fix_empty_naml('names', target, head, parts, 1)
+    parts = fix_empty_naml('names', target, head, parts, 9)
+    parts = fix_empty_naml('rcpt', target, head, parts, 7)
+    parts = fix_empty_naml('rcpt', target, head, parts, 25)
+    parts = fix_empty_naml('rcpt', target, head, parts, 32)
+    parts = fix_empty_naml('rcpt', target, head, parts, 42)
+    parts = fix_empty_naml('s401', target, head, parts, 6)
+    parts = fix_empty_naml('s401', target, head, parts, 10)
+    parts = fix_empty_naml('s401', target, head, parts, 20)
+    parts = fix_empty_naml('s497', target, head, parts, 7)
+    parts = fix_empty_naml('s497', target, head, parts, 22)
+    parts = fix_empty_naml('s498', target, head, parts, 8)
+    parts = fix_empty_naml('s498', target, head, parts, 17)
 
     if len(parts) != len(cols[target]):
         return None
@@ -321,7 +299,10 @@ def afters():
     add_index_for_columns_in_tables(conn, 'filer_id')
     add_index_for_columns_in_tables(conn, 'rec_type')
     add_index_for_columns_in_tables(conn, 'form_type')
+    add_index_for_columns_in_tables(conn, 'form_id')
     add_index_for_columns_in_tables(conn, 'filing_date')
+
+    # filer_filings header received_filings
 
 
 def check_memo_refs():
@@ -354,47 +335,6 @@ def check_memo_refs():
     print("memo_refno:")
     print(f"    missing: {row['missing']}")
     print(f"     target: {row['target']}")
-
-
-def import_fixes(filenames):
-
-    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
-    conn = engine.connect()
-
-    rows = dict()
-    errors_seen = 0
-    in_dict = False
-
-    for filename in filenames:
-
-        file = open(filename, 'r')
-        for line in file:
-            line = line.strip()
-            parts = line.split(' ')
-
-            if in_dict and len(parts) == 3 and re.match(r'^\d*', parts[0]):
-                key = parts[1]
-                value = parts[2].strip('|')
-                rows[table_name][-1][key] = value
-
-            if parts[0] == 'target:':
-                table_name = parts[1]
-                print(f"table_name: {table_name}")
-
-            if parts[0] == '{':
-                errors_seen += 1
-
-            if parts[0] == '{' and parts[-1] == 'FIXED':
-                in_dict = True
-                if table_name not in rows:
-                    rows[table_name] = list()
-                    rows[table_name].append(dict())
-
-            if line == '}':
-                in_dict = False
-
-    print(f"errors_seen: {errors_seen}")
-    print(f"rows: {rows}")
 
 
 def import_data(info):
@@ -565,19 +505,22 @@ def import_data(info):
     out_file.close()
 
 
-def import_all_data():
+def data_files():
+    """
+    :return: list of dictionaries with a import pk and a filename.
+    """
 
     engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
     conn = engine.connect()
 
-    row = conn.execute("select max(pk) as pk from _file_imports;").fetchone()
+    row = conn.execute("select max(pk) as pk from _file_imports").fetchone()
 
     if row['pk'] is None:
         import_pk = 1
     else:
         import_pk = int(row['pk']) + 1
 
-    filenames = list()
+    found = list()
 
     for file in os.listdir(data_dir()):
 
@@ -589,19 +532,38 @@ def import_all_data():
         if should_exclude(target):
             continue
 
-        filenames.append({'pk': import_pk, 'file': file})
+        found.append({'pk': import_pk, 'file': file})
         import_pk += 1
 
-    print(f"filenames: {filenames}")
-
-    if args.no_threads or len(filenames) == 1:
-        for entry in filenames:
-            import_data(entry)
-    else:
-        p_map(import_data, filenames)
+    # print(f"filenames: {found}")
+    return found
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--include', type=str, nargs='*',
+                        help='Include files that match this pattern.')
+    parser.add_argument('--skip', type=str, nargs='*',
+                        help='Skip files that include this pattern.')
+    parser.add_argument('--increment', type=int, default=10000,
+                        help='Data frame building increment, default 10000')
+    parser.add_argument('--run-checks', type=str, nargs='*',
+                        help='Only check available: memo_refs')
+    parser.add_argument('--use-fixes', type=str, nargs='*',
+                        help="Use file, from errors, where the errors are fixed.")
+    parser.add_argument('--include-after', action='store_true')
+    parser.add_argument('--only-after', action='store_true')
+    parser.add_argument('--include-olders', action='store_true')
+    parser.add_argument('--no-threads', action='store_true')
+
+    args = parser.parse_args()
+
+    table_columns_data = None
+
+    cols = common.table_columns()
+
+    file_infos = data_files()
 
     if args.run_checks is not None:
         if 'memo_refs' in args.run_checks:
@@ -609,13 +571,9 @@ if __name__ == '__main__':
         print("quitting...")
         quit()
 
-    if args.use_fixes is not None:
-        print("use fixes YES")
-        import_fixes(args.use_fixes)
-        quit()
-
     if not args.only_after:
-        import_all_data()
+        for file_info in file_infos:
+            import_data(file_info)
 
     if args.include_after or args.only_after:
         afters()
