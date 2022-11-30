@@ -17,6 +17,13 @@ cfg = dotenv_values(".env")
 sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
+verbose = False
+
+
+def dprint(msg):
+    if verbose:
+        print(msg)
+
 
 def create_col_type(col_type):
 
@@ -45,12 +52,42 @@ def create_col_type(col_type):
     raise Exception(f"Unregnized type fo column: {col_type}")
 
 
+def setup():
+
+    engine = create_engine(f"mysql+pymysql://ray:{cfg['PWD']}@{cfg['HOST']}/{cfg['DB']}")
+    conn = engine.connect()
+
+    sql = """
+    create table if not exists _file_imports (
+        pk int primary key,
+        filename varchar(127),
+        num_read int,
+        error_count int,
+        import_dt datetime)
+    """
+
+    conn.execute(sql)
+
+    sql = """
+    create table if not exists _files (
+        pk int primary key,
+        filename varchar(128),
+        num_bytes bigint,
+        last_mod varchar(31),
+        num_lines bigint,
+        sha1_digest varchar(63),
+        target varchar(63))
+    """
+
+    conn.execute(sql)
+
+
 def create_table(engine, table_name, head):
 
     meta = sa.MetaData()
     table = sa.Table(table_name, meta)
     for col_head in head:
-        col_type = cols[table_name][col_head]
+        col_type = common.table_columns()[table_name][col_head]
         if col_type.endswith('primary key'):
             # TODO the primary_key parameter in the Column() call is not creating a pk. why?
             table.append_column(sa.Column(col_head, create_col_type(col_type), primary_key=True))
@@ -84,14 +121,16 @@ def as_dict(keys, values):
 
 
 def data_dir():
-    d = sorted([d for d in os.listdir("data/") if re.match(r'^data_.*\.TSV', d)])[-1]
-    return f"data/{d}/DATA"
+    # d = sorted([d for d in os.listdir("data/") if re.match(r'^data_.*\.TSV', d)])[-1]
+    return f"data/data_20221126/DATA"
 
 
+# FIX005
 def fix_empty_naml(targeted, target, head, line_parts, idx):
     if target == targeted:
         if len(line_parts) == (len(head) + 1):
             if line_parts[idx].strip(' ') == '' and line_parts[idx+1] != '':
+                dprint(f"FIX0005: fixing {target}: {line_parts}")
                 line_parts.pop(idx)
     return line_parts
 
@@ -102,7 +141,7 @@ def check_types(target, line_parts):
 
     for idx in range(len(line_parts)):
 
-        col_type = list(cols[target].values())[idx]
+        col_type = list(common.table_columns()[target].values())[idx]
         if line_parts[idx] is None:
             continue
 
@@ -110,47 +149,55 @@ def check_types(target, line_parts):
 
         if col_type == 'date':
             if not re.match(r'^\d{4}-\d{2}-\d{2}$', value):
-                print(f"error for value: \"{value}\" of type {col_type}")
+                print(f"error for value {target}: \"{value}\" of type {col_type}")
                 errs += 1
 
         if col_type.startswith('varchar'):
             max_len = int(col_type.replace('varchar(', '').replace(')', ''))
             if len(value) > max_len:
-                print(f"error for value: \"{value}\" of type {col_type}")
+                print(f"error for value {target}: \"{value}\" of type {col_type}")
                 errs += 1
 
         if col_type == 'int':
             if not re.match(r'^-?\d*$', value):
-                print(f"error for value: \"{value}\" of type {col_type}")
+                print(f"error for value {target}: \"{value}\" of type {col_type}")
                 errs += 1
 
         if col_type == 'decimal':
             parts = value.split('.')
             if len(parts) != 2 or not re.match(r'^\d*$', parts[0]) or not re.match(r'^\d*$', parts[1]):
-                print(f"error for value: \"{value}\" of type {col_type}")
+                print(f"error for value {target}: \"{value}\" of type {col_type}")
                 errs += 1
 
     return errs
 
 
-def fix_parts(target, head, parts):
+def fix_parts(target, head, lines):
 
+    parts = lines[0]
+
+    # FIX0001
     if target == 'cvr2_registration':
-        if len(parts) == (len(cols[target]) + 1):
+        if len(parts) == (len(common.table_columns()[target]) + 1):
             if parts[7] == '' and re.match(r'^[CLE]?\d+$', parts[8]):
+                dprint(f"FIX0001: fixing {target}: {parts}")
                 parts.pop(7)
 
+    # FIX0002
     if target == 'cvr_registration':
-        if len(parts) == (len(cols[target]) + 1):
+        if len(parts) == (len(common.table_columns()[target]) + 1):
             # data found on 2022-11-16 rrk
             if parts[0] == '1719434' and parts[1] == '0':
+                print(f"FIX0002: fixing {target}: {parts}")
                 parts.pop(38)
             if parts[0] == '2329423' and parts[1] == '0':
+                dprint(f"FIX0002: fixing {target}: {parts}")
                 parts.pop(38)
 
     # this seems to get a variable number of tabs after, even when all the data is fine.
     # check the filing_id, trans_id, cum_ytd, cum_oth and then pop off empty fields.
     #
+    # FIX0003
     if target == 'rcpt':
         if len(parts) > 63:
             if re.match (r'^\d+$', parts[20]):
@@ -158,10 +205,12 @@ def fix_parts(target, head, parts):
                     if re.match(r'^\d+$', parts[0]):
                         if re.match(r'^\d+$', parts[5]):
                             while len(parts) > 63 and parts[-1] == '':
+                                dprint(f"FIX0003: fixing {target}: {parts}")
                                 parts.pop()
 
     # same thing here, variable number of tabs.
     #
+    # FIX004
     if target == 'cvr_campaign_disclosure':
         if len(parts) > 86:
             if parts[37] in ['Y', 'N']:
@@ -169,6 +218,7 @@ def fix_parts(target, head, parts):
                     if parts[39] in ['Y', 'N']:
                         if parts[40] in ['Y', 'N']:
                             while len(parts) > 86 and parts[-1] == '':
+                                dprint(f"FIX0004: fixing {target}: {parts}")
                                 parts.pop()
 
     # these all target missing NAML values when this got pushed up.
@@ -230,13 +280,14 @@ def fix_parts(target, head, parts):
     parts = fix_empty_naml('s498', target, head, parts, 8)
     parts = fix_empty_naml('s498', target, head, parts, 17)
 
-    if len(parts) != len(cols[target]):
+    if len(parts) != len(head):
+        dprint(f"FIX0006: aborting {target}: {parts}")
         return None
         # raise Exception(f"target: {target}, incorrect # columns")
 
     for idx in range(len(head)):
         col_name = head[idx]
-        col_type = cols[target][col_name]
+        col_type = common.table_columns()[target][col_name.lower()]
         col_value = parts[idx]
 
         if col_type in ['date', 'datetime']:
@@ -337,7 +388,93 @@ def check_memo_refs():
     print(f"     target: {row['target']}")
 
 
+def importable_lines(out_file, target, columns, lines):
+    """
+    :param out_file: for debugging, can be None for testing.
+    :param target: the table for which the lines are intended.
+    :param columns: for the target table.
+    :param lines: an array of the last 6 lines of the input.
+    :return: either None or the last line with fixes.
+    """
+
+    # FILERNAME_CD.TSV has problems with broken lines. Like this:
+    # ERROR: 1131228
+    # {   lines[1]                                  lines[0]
+    #     0 XREF_FILER_ID: |1449339|
+    #     1 FILER_ID: |1449339|
+    #     2 FILER_TYPE: |RECIPIENT COMMITTEE|
+    #     3 STATUS: |ACTIVE|				        ERROR: 1131229
+    #     4 EFFECT_DT: |07/15/2022|			        {
+    #     5 NAML: |MARROCCO FOR TRUSTEE 2022; RENA|	    0 XREF_FILER_ID: ||
+    #     6 NAMF: MISSING				                1 FILER_ID: ||
+    #     7 NAMT: MISSING				                2 FILER_TYPE: ||
+    #     8 NAMS: MISSING				                3 STATUS: ||
+    #     9 ADR1: MISSING				                4 EFFECT_DT: ||
+    #     10 ADR2: MISSING				                5 NAML: ||
+    #     11 CITY: MISSING				                6 NAMF: |VISTA |
+    #     12 ST: MISSING				                7 NAMT: |CA|
+    #     13 ZIP4: MISSING				                8 NAMS: |92084    |
+    #     14 PHON: MISSING				                9 ADR1: |7603328398|
+    #     15 FAX: MISSING				                10 ADR2: ||
+    #     16 EMAIL: MISSING				                11 CITY: |readyforrena@gmail.com|
+    #
+    # The two records need to be knit back together again.
+    #
+    if target == 'filername':
+
+        if len(lines[1]) == 6 and len(lines[0]) == 12:
+            next_line = lines[1].copy()
+            next_line.extend(lines[0][1:])
+            lines[0] = next_line
+
+    # NAMES_CD.TSV also has problem with broken lines, like:
+    #
+    # ERROR: 467496
+    # {   lines[1]                             lines[0]
+    #     0 NAMID: |1576948|
+    #     1 NAML: |SACRAMENTO VOTER PROJECT|   0 NAMID: ||
+    #     2 NAMF: MISSING                      1 NAML: ||
+    #     3 NAMT: MISSING                      2 NAMF: ||
+    #     4 NAMS: MISSING                      3 NAMT: ||
+    #     5 MONIKER: MISSING                   4 NAMS: ||
+    #     6 MONIKER_POS: MISSING               5 MONIKER: ||
+    #     7 NAMM: MISSING                      6 MONIKER_POS: ||
+    #     8 FULLNAME: MISSING                  7 NAMM: ||
+    #     9 NAML_SEARCH: MISSING               8 FULLNAME: |SACRAMENTO VOTER PROJECT|
+    # }                                        9 NAML_SEARCH: MISSING
+    #
+    if target == 'names':
+
+        if len(lines[1]) == 2 and len(lines[0]) == 9:
+            next_parts = lines[1].copy()
+            next_parts.extend(lines[0][1:8])
+            lines[0] = next_parts
+
+    next_parts = fix_parts(target, columns, lines)
+
+    if next_parts is None:
+        if out_file:
+            out_file.write(f"ERROR: {lines[0]}\n")
+            out_file.write(as_dict(columns, lines[0]) + '\n')
+        return None
+
+    line_errors = check_types(target, lines[0])
+
+    if line_errors > 0 and out_file:
+        out_file.write(f"ERROR: {lines[0]}\n")
+        out_file.write(as_dict(columns, lines[0])+'\n')
+
+    else:
+        data_dict = dict(zip(columns, lines[0]))
+        return data_dict
+
+
 def import_data(info):
+    """
+    For each file, preps the tables, gathers lines and sends them to import.
+    :param info: pk -> import_pk, file: a filename.
+    :return:
+    """
 
     now = int(time.time())
 
@@ -364,7 +501,7 @@ def import_data(info):
     lines_read = 0
     head = None
 
-    last_parts = []
+    parts_list = [[],[],[],[],[],[]]
 
     try:
         # if we read as 'r', then lines with '\r\r\n' come out as 2 lines.
@@ -387,84 +524,14 @@ def import_data(info):
                 lines_read += 1
                 continue
 
-            # FILERNAME_CD.TSV has problems with broken lines. Like this:
-            # ERROR: 1131228
-            # {
-            #     0 XREF_FILER_ID: |1449339|
-            #     1 FILER_ID: |1449339|
-            #     2 FILER_TYPE: |RECIPIENT COMMITTEE|
-            #     3 STATUS: |ACTIVE|				        ERROR: 1131229
-            #     4 EFFECT_DT: |07/15/2022|			        {
-            #     5 NAML: |MARROCCO FOR TRUSTEE 2022; RENA|	    0 XREF_FILER_ID: ||
-            #     6 NAMF: MISSING				                1 FILER_ID: ||
-            #     7 NAMT: MISSING				                2 FILER_TYPE: ||
-            #     8 NAMS: MISSING				                3 STATUS: ||
-            #     9 ADR1: MISSING				                4 EFFECT_DT: ||
-            #     10 ADR2: MISSING				                5 NAML: ||
-            #     11 CITY: MISSING				                6 NAMF: |VISTA |
-            #     12 ST: MISSING				                7 NAMT: |CA|
-            #     13 ZIP4: MISSING				                8 NAMS: |92084    |
-            #     14 PHON: MISSING				                9 ADR1: |7603328398|
-            #     15 FAX: MISSING				                10 ADR2: ||
-            #     16 EMAIL: MISSING				                11 CITY: |readyforrena@gmail.com|
-            #
-            # The two records need to be knit back together again.
-            #
-            if target == 'filername':
+            parts_list.insert(0, line_parts)
+            parts_list.pop()
 
-                if len(last_parts) == 0 and len(line_parts) == 6:
-                    last_parts = line_parts.copy()
-                    lines_read += 1
-                    continue
+            next_parts = importable_lines(out_file, target, lhead, parts_list)
 
-                if len(line_parts) != 6 and len(line_parts) != 12:
-                    last_parts = []
-
-                if len(last_parts) == 6 and len(line_parts) == 12:
-                    next_line_parts = last_parts
-                    next_line_parts.extend(line_parts[1:])
-                    last_parts = []
-                    line_parts = next_line_parts
-
-            # NAMES_CD.TSV also has problem with broken lines, like:
-            # ERROR: 467496
-            # {
-            #     0 NAMID: |1576948|
-            #     1 NAML: |SACRAMENTO VOTER PROJECT|   0 NAMID: ||
-            #     2 NAMF: MISSING                      1 NAML: ||
-            #     3 NAMT: MISSING                      2 NAMF: ||
-            #     4 NAMS: MISSING                      3 NAMT: ||
-            #     5 MONIKER: MISSING                   4 NAMS: ||
-            #     6 MONIKER_POS: MISSING               5 MONIKER: ||
-            #     7 NAMM: MISSING                      6 MONIKER_POS: ||
-            #     8 FULLNAME: MISSING                  7 NAMM: ||
-            #     9 NAML_SEARCH: MISSING               8 FULLNAME: |SACRAMENTO VOTER PROJECT|
-            # }                                        9 NAML_SEARCH: MISSING
-            #
-            # this next fix is not working...
-            if target == 'name':
-
-                if len(last_parts) == 0 and len(line_parts) == 2:
-                    last_parts = line_parts.copy()
-                    lines_read += 1
-                    continue
-
-                if len(line_parts) != 2 and len(line_parts) != 9:
-                    last_parts = []
-
-                if len(last_parts) == 2 and len(line_parts) == 9:
-                    next_line_parts = last_parts
-                    next_line_parts.extend(line_parts[1:8])
-                    last_parts = []
-                    line_parts = next_line_parts
-
-            # done with knitting together lines for now.
-
-            line_parts = fix_parts(target, lhead, line_parts)
-
-            if line_parts is None:
+            if next_parts is None:
                 out_file.write(f"ERROR: {lines_read}\n")
-                out_file.write(as_dict(head, line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')) + '\n')
+                out_file.write(as_dict(head, line.decode(encoding='utf 8').strip('\n').strip('\r').split('\t')) + '\n')
                 errors += 1
                 lines_read += 1
                 continue
@@ -474,20 +541,18 @@ def import_data(info):
             if line_errors > 0:
                 errors += line_errors
                 out_file.write(f"ERROR: {lines_read}\n")
-                out_file.write(as_dict(head, line_parts)+'\n')
+                out_file.write(as_dict(head, line_parts) + '\n')
 
             else:
                 data_dict = dict(zip(lhead, line_parts))
                 data_lines.append(data_dict)
                 if len(data_lines) >= args.increment:
-                    out_file.write(f"now: {dt.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+                    out_file.write(f"now: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}\n")
                     conn.execute(sa.insert(table, data_lines))
                     data_lines.clear()
 
-            lines_read += 1
-
-        # handle rows left-over from the last incremenr
-        if len(data_lines) > 0:
+        if len(data_lines) >= 0:
+            out_file.write(f"now: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}\n")
             conn.execute(sa.insert(table, data_lines))
             data_lines.clear()
 
@@ -497,15 +562,16 @@ def import_data(info):
         out_file.write("\n")
 
     finally:
-        conn.execute(f"""
-            update _file_imports
-            set num_read = {lines_read}, error_count = {errors}
-            where pk = {import_pk};""")
+        # conn.execute(f"""
+        #     update _file_imports
+        #     set num_read = {lines_read}, error_count = {errors}
+        #     where pk = {import_pk};""")
+        pass
 
     out_file.close()
 
 
-def data_files():
+def data_file_jobs():
     """
     :return: list of dictionaries with a import pk and a filename.
     """
@@ -561,9 +627,7 @@ if __name__ == '__main__':
 
     table_columns_data = None
 
-    cols = common.table_columns()
-
-    file_infos = data_files()
+    setup()
 
     if args.run_checks is not None:
         if 'memo_refs' in args.run_checks:
@@ -572,7 +636,7 @@ if __name__ == '__main__':
         quit()
 
     if not args.only_after:
-        for file_info in file_infos:
+        for file_info in data_file_jobs():
             import_data(file_info)
 
     if args.include_after or args.only_after:
