@@ -1,8 +1,26 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
 <html>
 <head>
-    <title>OpenCalAccess - Imports</title>
+    <title>Imports - OpenCalAccess</title>
     {% include "styles.html" %}
+    {% include "datatable.html" %}
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $('#data').DataTable(
+                {
+                    "columns": [
+                        {"name": "DataDate", "orderable": true},
+                        {"name": "Target", "orderable": true},
+                        {"name": "NumLines", "orderable": true},
+                        {"name": "NumRead", "orderable": true},
+                        {"name": "Diff", "orderable": true},
+                        {"name": "Errors", "orderable": true},
+                        {"name": "ImportDt", "orderable": true}
+                    ]
+                }
+            );
+        });
+    </script>
 </head>
 <body>
 <div style="padding: 25px 25px 25px 25px;">
@@ -14,7 +32,8 @@
             {% endfor %}
         </select>
     </p>
-    <table class="table">
+    <table id="data" class="table">
+        <thead>
         <tr>
             <th>DataDate</th>
             <th>Target</th>
@@ -24,6 +43,8 @@
             <th>Errors</th>
             <th>ImportDt</th>
         </tr>
+        </thead>
+        <tbody>
         {% for imported in imports %}
         <tr>
             <td>{{ imported.data_date }}</td>
@@ -35,6 +56,7 @@
             <td>{{ imported.import_dt }}</td>
         </tr>
         {% endfor %}
+        </tbody>
     </table>
 </div>
 </body></html>

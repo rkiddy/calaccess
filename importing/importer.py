@@ -9,7 +9,7 @@ import traceback
 
 import sqlalchemy as sa
 from dotenv import dotenv_values
-from p_tqdm import p_map
+from profilehooks import profile
 from sqlalchemy import create_engine
 
 cfg = dotenv_values(".env")
@@ -17,7 +17,7 @@ cfg = dotenv_values(".env")
 sys.path.append(f"{cfg['APP_HOME']}")
 import common
 
-verbose = False
+verbose = True
 
 
 def dprint(msg):
@@ -82,19 +82,23 @@ def setup():
     conn.execute(sql)
 
 
-def create_table(engine, table_name, head):
+table_info = common.MyTable()
+
+
+def create_table(engine, table_name, head, execute_create=True):
 
     meta = sa.MetaData()
     table = sa.Table(table_name, meta)
     for col_head in head:
-        col_type = common.table_columns()[table_name][col_head]
+        col_type = table_info.table_columns()[table_name][col_head]
         if col_type.endswith('primary key'):
             # TODO the primary_key parameter in the Column() call is not creating a pk. why?
             table.append_column(sa.Column(col_head, create_col_type(col_type), primary_key=True))
         else:
             table.append_column(sa.Column(col_head, create_col_type(col_type)))
 
-    meta.create_all(engine)
+    if execute_create:
+        meta.create_all(engine)
 
     return table
 
@@ -126,22 +130,77 @@ def data_dir():
 
 
 # FIX005
-def fix_empty_naml(targeted, target, head, line_parts, idx):
-    if target == targeted:
-        if len(line_parts) == (len(head) + 1):
-            if line_parts[idx].strip(' ') == '' and line_parts[idx+1] != '':
-                dprint(f"FIX0005: fixing {target}: {line_parts}")
-                line_parts.pop(idx)
+#@profile
+def fix_empty_naml(head, line_parts):
+    #
+    # Another approach to this.
+    #
+    # Say that I have a record:
+    # {
+    #   0  SOME_ID: 0011,
+    #   1  OTHER_ID: 0027,
+    #   2  A_NAML: ''
+    #   3  A_NAMF: ''
+    #   4  A_NAMS: '',
+    #   5  A_NAMT: '':
+    #   6  LAST_COL: '',
+    #   7  MISSING: ''.
+    #   8  MISSING: 'Smith'.
+    #   9  MISSING: 'John'.
+    #   10 MISSING: ''.
+    #   11 MISSING: ''.
+    #   12 MISSING: 'yes'
+    # }
+    # A_NAML is at idx 2. The next non-=blank field is at idx 8.
+    # The length of the line is 13. The expected length is 7.
+    # ( 8 - 2 ) == 6 == ( 13 - 7 ).
+    # So, I can remove fields 2 through 7 and get the correct line.
+    #
+    if len(head) >= len(line_parts):
+        return line_parts
+
+    namls = list()
+    for col_idx in range(len(head)):
+        if head[col_idx].endswith('_NAML'):
+            namls.append(col_idx)
+
+    for naml_idx in namls:
+
+        if line_parts[naml_idx] != '':
+            continue
+
+        next_non_blank_idx = naml_idx + 1
+        while line_parts[next_non_blank_idx] == '':
+            next_non_blank_idx += 1
+
+        naml_diff = next_non_blank_idx - naml_idx
+
+        whole_line_diff = len(line_parts) - len(head)
+
+        if naml_diff <= whole_line_diff:
+            for skip in range(naml_diff):
+                line_parts.pop(naml_idx)
+
     return line_parts
 
 
+# def _WAS_fix_empty_naml(targeted, target, head, line_parts, idx):
+#         if target == targeted:
+#         if len(line_parts) == (len(head) + 1):
+#             if line_parts[idx].strip(' ') == '' and line_parts[idx+1] != '':
+#                 dprint(f"FIX0005: fixing {target}: {line_parts}")
+#                 line_parts.pop(idx)
+#     return line_parts
+
+
+#@profile
 def check_types(target, line_parts):
 
     errs = 0
 
     for idx in range(len(line_parts)):
 
-        col_type = list(common.table_columns()[target].values())[idx]
+        col_type = list(table_info.table_columns()[target].values())[idx]
         if line_parts[idx] is None:
             continue
 
@@ -172,20 +231,21 @@ def check_types(target, line_parts):
     return errs
 
 
+#@profile
 def fix_parts(target, head, lines):
 
     parts = lines[0]
 
     # FIX0001
     if target == 'cvr2_registration':
-        if len(parts) == (len(common.table_columns()[target]) + 1):
+        if len(parts) == (len(table_info.table_columns()[target]) + 1):
             if parts[7] == '' and re.match(r'^[CLE]?\d+$', parts[8]):
                 dprint(f"FIX0001: fixing {target}: {parts}")
                 parts.pop(7)
 
     # FIX0002
     if target == 'cvr_registration':
-        if len(parts) == (len(common.table_columns()[target]) + 1):
+        if len(parts) == (len(table_info.table_columns()[target]) + 1):
             # data found on 2022-11-16 rrk
             if parts[0] == '1719434' and parts[1] == '0':
                 print(f"FIX0002: fixing {target}: {parts}")
@@ -221,64 +281,7 @@ def fix_parts(target, head, lines):
                                 dprint(f"FIX0004: fixing {target}: {parts}")
                                 parts.pop()
 
-    # these all target missing NAML values when this got pushed up.
-    #
-    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 6)
-    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 26)
-    parts = fix_empty_naml('cvr_campaign_disclosure', target, head, parts, 61)
-    parts = fix_empty_naml('cvr_e530', target, head, parts, 5)
-    parts = fix_empty_naml('cvr_e530', target, head, parts, 16)
-    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 7)
-    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 28)
-    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 32)
-    parts = fix_empty_naml('cvr_lobby_disclosure', target, head, parts, 46)
-    parts = fix_empty_naml('cvr_registration', target, head, parts, 7)
-    parts = fix_empty_naml('cvr_registration', target, head, parts, 29)
-    parts = fix_empty_naml('cvr_registration', target, head, parts, 33)
-    parts = fix_empty_naml('cvr_so', target, head, parts, 6)
-    parts = fix_empty_naml('cvr_so', target, head, parts, 26)
-    parts = fix_empty_naml('cvr2_campaign_disclosure', target, head, parts, 13)
-    parts = fix_empty_naml('cvr2_campaign_disclosure', target, head, parts, 23)
-    parts = fix_empty_naml('cvr2_lobby_disclosure', target, head, parts, 4)
-    parts = fix_empty_naml('cvr2_registration', target, head, parts, 8)
-    parts = fix_empty_naml('cvr2_so', target, head, parts, 7)
-    parts = fix_empty_naml('cvr3_verification_info', target, head, parts, 9)
-    parts = fix_empty_naml('debt', target, head, parts, 7)
-    parts = fix_empty_naml('debt', target, head, parts, 21)
-    parts = fix_empty_naml('expn', target, head, parts, 7)
-    parts = fix_empty_naml('expn', target, head, parts, 21)
-    parts = fix_empty_naml('expn', target, head, parts, 26)
-    parts = fix_empty_naml('expn', target, head, parts, 33)
-    parts = fix_empty_naml('f501_502', target, head, parts, 13)
-    parts = fix_empty_naml('f501_502', target, head, parts, 26)
-    parts = fix_empty_naml('filername', target, head, parts, 5)
-    parts = fix_empty_naml('latt', target, head, parts, 7)
-    parts = fix_empty_naml('lccm', target, head, parts, 7)
-    parts = fix_empty_naml('lccm', target, head, parts, 15)
-    parts = fix_empty_naml('lemp', target, head, parts, 6)
-    parts = fix_empty_naml('lexp', target, head, parts, 8)
-    parts = fix_empty_naml('loan', target, head, parts, 8)
-    parts = fix_empty_naml('loan', target, head, parts, 26)
-    parts = fix_empty_naml('loan', target, head, parts, 33)
-    parts = fix_empty_naml('lobby_amendments', target, head, parts, 9)
-    parts = fix_empty_naml('lobby_amendments', target, head, parts, 15)
-    parts = fix_empty_naml('lobby_amendments', target, head, parts, 21)
-    parts = fix_empty_naml('lobby_amendments', target, head, parts, 27)
-    parts = fix_empty_naml('loth', target, head, parts, 11)
-    parts = fix_empty_naml('lpay', target, head, parts, 7)
-    parts = fix_empty_naml('names', target, head, parts, 1)
-    parts = fix_empty_naml('names', target, head, parts, 9)
-    parts = fix_empty_naml('rcpt', target, head, parts, 7)
-    parts = fix_empty_naml('rcpt', target, head, parts, 25)
-    parts = fix_empty_naml('rcpt', target, head, parts, 32)
-    parts = fix_empty_naml('rcpt', target, head, parts, 42)
-    parts = fix_empty_naml('s401', target, head, parts, 6)
-    parts = fix_empty_naml('s401', target, head, parts, 10)
-    parts = fix_empty_naml('s401', target, head, parts, 20)
-    parts = fix_empty_naml('s497', target, head, parts, 7)
-    parts = fix_empty_naml('s497', target, head, parts, 22)
-    parts = fix_empty_naml('s498', target, head, parts, 8)
-    parts = fix_empty_naml('s498', target, head, parts, 17)
+    parts = fix_empty_naml(head, parts)
 
     if len(parts) != len(head):
         dprint(f"FIX0006: aborting {target}: {parts}")
@@ -287,7 +290,7 @@ def fix_parts(target, head, lines):
 
     for idx in range(len(head)):
         col_name = head[idx]
-        col_type = common.table_columns()[target][col_name.lower()]
+        col_type = table_info.table_columns()[target][col_name.lower()]
         col_value = parts[idx]
 
         if col_type in ['date', 'datetime']:
@@ -329,7 +332,7 @@ def should_exclude(table):
 
 
 def add_index_for_columns_in_tables(conn, col_name):
-    found_tables = common.tables_with_column(col_name)
+    found_tables = table_info.tables_with_column(col_name)
     for table in found_tables:
         if should_exclude(table):
             continue
@@ -366,7 +369,7 @@ def check_memo_refs():
     conn.execute("create table _memo_ref_nos (ref_no varchar(20))")
     conn.execute("alter table _memo_ref_nos add unique (ref_no)")
 
-    for table in common.tables_with_column('memo_refno'):
+    for table in table_info.tables_with_column('memo_refno'):
         print(f"starting {table}...")
         sql = f"select distinct(memo_refno) as ref_no from {table}"
         for row in conn.execute(sql).fetchall():
@@ -388,9 +391,9 @@ def check_memo_refs():
     print(f"     target: {row['target']}")
 
 
-def importable_lines(out_file, target, columns, lines):
+#@profile
+def importable_lines(target, columns, lines):
     """
-    :param out_file: for debugging, can be None for testing.
     :param target: the table for which the lines are intended.
     :param columns: for the target table.
     :param lines: an array of the last 6 lines of the input.
@@ -445,30 +448,34 @@ def importable_lines(out_file, target, columns, lines):
     #
     if target == 'names':
 
-        if len(lines[1]) == 2 and len(lines[0]) == 9:
-            next_parts = lines[1].copy()
-            next_parts.extend(lines[0][1:8])
+        if len(lines[1]) == 9 and len(lines[0]) == 2:
+            next_parts = lines[0].copy()
+            next_parts.extend(lines[1][1:])
             lines[0] = next_parts
 
     next_parts = fix_parts(target, columns, lines)
 
     if next_parts is None:
-        if out_file:
-            out_file.write(f"ERROR: {lines[0]}\n")
-            out_file.write(as_dict(columns, lines[0]) + '\n')
+        print(f"ERROR: {lines[0]}\n")
+        print(as_dict(columns, lines[0]) + '\n')
         return None
 
     line_errors = check_types(target, lines[0])
 
-    if line_errors > 0 and out_file:
-        out_file.write(f"ERROR: {lines[0]}\n")
-        out_file.write(as_dict(columns, lines[0])+'\n')
+    if line_errors > 0:
+        print(f"ERROR: {lines[0]}\n")
+        print(as_dict(columns, lines[0])+'\n')
 
     else:
         data_dict = dict(zip(columns, lines[0]))
         return data_dict
 
 
+def save_lines_to_db(conn, table, lines):
+    conn.execute(sa.insert(table, lines))
+
+
+#@profile
 def import_data(info):
     """
     For each file, preps the tables, gathers lines and sends them to import.
@@ -486,8 +493,6 @@ def import_data(info):
 
     target = filename.replace('_CD.TSV', '').lower()
 
-    out_file = open(f"{data_dir()}/{target}_{import_pk}.txt", 'w')
-
     conn.execute(f"DROP TABLE IF EXISTS {target};")
     conn.execute(f"DROP TABLE IF EXISTS {target}_older;")
 
@@ -499,20 +504,23 @@ def import_data(info):
              from_unixtime({now}));""")
 
     lines_read = 0
+    errors = 0
     head = None
 
     parts_list = [[],[],[],[],[],[]]
+
+    table = None
 
     try:
         # if we read as 'r', then lines with '\r\r\n' come out as 2 lines.
         data_file = open(f"{data_dir()}/{filename}", 'rb')
         data_lines = list()
-        errors = 0
 
         for line in data_file:
 
             # there are lines that end in, for instance, '\r\r\n'.
             line_parts = line.decode(encoding='utf-8').strip('\n').strip('\r').split('\t')
+            lines_read += 1
 
             if line.decode(encoding='utf-8').startswith('2203954\t2\t11\tCVR2\tF603'):
                 pass
@@ -521,54 +529,50 @@ def import_data(info):
                 head = line_parts
                 lhead = [x.lower() for x in head]
                 table = create_table(engine, target, lhead)
-                lines_read += 1
                 continue
 
             parts_list.insert(0, line_parts)
             parts_list.pop()
 
-            next_parts = importable_lines(out_file, target, lhead, parts_list)
+            next_parts = importable_lines(target, lhead, parts_list)
 
             if next_parts is None:
-                out_file.write(f"ERROR: {lines_read}\n")
-                out_file.write(as_dict(head, line.decode(encoding='utf 8').strip('\n').strip('\r').split('\t')) + '\n')
+                print(f"ERROR: {lines_read}\n")
+                print(as_dict(head, line.decode(encoding='utf 8').strip('\n').strip('\r').split('\t')) + '\n')
                 errors += 1
-                lines_read += 1
                 continue
 
             line_errors = check_types(target, line_parts)
 
             if line_errors > 0:
                 errors += line_errors
-                out_file.write(f"ERROR: {lines_read}\n")
-                out_file.write(as_dict(head, line_parts) + '\n')
+                print(f"ERROR: {lines_read}\n")
+                print(as_dict(head, line_parts) + '\n')
 
             else:
                 data_dict = dict(zip(lhead, line_parts))
                 data_lines.append(data_dict)
                 if len(data_lines) >= args.increment:
-                    out_file.write(f"now: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}\n")
-                    conn.execute(sa.insert(table, data_lines))
+                    print(f"now {target}: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}")
+                    save_lines_to_db(conn, table, data_lines)
                     data_lines.clear()
 
-        if len(data_lines) >= 0:
-            out_file.write(f"now: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}\n")
-            conn.execute(sa.insert(table, data_lines))
-            data_lines.clear()
+        # checking for table, if 0 len file, it will not be defined.
+        if len(data_lines) >= 0 and table:
+            print(f"now {target}: {dt.datetime.now().strftime('%Y %m %d %H:%M:%S')}")
+            save_lines_to_db(conn, table, data_lines)
 
     except:
-        out_file.write("EXCEPTION df:\n")
-        traceback.print_exc(file=out_file)
-        out_file.write("\n")
+        print("EXCEPTION df:\n")
+        traceback.print_exc()
+        print("\n")
 
     finally:
-        # conn.execute(f"""
-        #     update _file_imports
-        #     set num_read = {lines_read}, error_count = {errors}
-        #     where pk = {import_pk};""")
+        conn.execute(f"""
+            update _file_imports
+            set num_read = {lines_read}, error_count = {errors}
+            where pk = {import_pk};""")
         pass
-
-    out_file.close()
 
 
 def data_file_jobs():
@@ -601,7 +605,6 @@ def data_file_jobs():
         found.append({'pk': import_pk, 'file': file})
         import_pk += 1
 
-    # print(f"filenames: {found}")
     return found
 
 
@@ -612,8 +615,8 @@ if __name__ == '__main__':
                         help='Include files that match this pattern.')
     parser.add_argument('--skip', type=str, nargs='*',
                         help='Skip files that include this pattern.')
-    parser.add_argument('--increment', type=int, default=10000,
-                        help='Data frame building increment, default 10000')
+    parser.add_argument('--increment', type=int, default=1000,
+                        help='Data frame building increment')
     parser.add_argument('--run-checks', type=str, nargs='*',
                         help='Only check available: memo_refs')
     parser.add_argument('--use-fixes', type=str, nargs='*',
@@ -624,8 +627,6 @@ if __name__ == '__main__':
     parser.add_argument('--no-threads', action='store_true')
 
     args = parser.parse_args()
-
-    table_columns_data = None
 
     setup()
 
