@@ -4,7 +4,7 @@
     <title>OpenCalAccess</title>
     {% include "styles.html" %}
     {% include "datatable.html" %}
-    <script>
+    <script type="text/javascript">
         $(document).ready(function () {
             $('#filings').DataTable(
                 {
@@ -58,9 +58,9 @@
                 <td>{{ filing.filer_type }}</td>
                 <td>{{ filing.period }}</td>
                 <td>{{ filing.form_id }}</td>
-                <td>
+                <td style = "white-space: nowrap;">
                     {% for amount in filing.amounts %}
-                    {{ amount }}:&nbsp;{{ filing.amounts[amount] }}
+                    {{ amount }}:&nbsp;{{ filing.amounts[amount] }}<br/>
                     {% endfor %}
                 </td>
                 {% if filing.rpt_start == filing.rpt_end %}

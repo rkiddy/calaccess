@@ -33,6 +33,18 @@ def tables_with_column(col_name):
     return sorted(found_tables)
 
 
+def max_amend_id(filing_id, table):
+    try:
+        sql = f"select max(amend_id) as amend_id from {table} where filing_id = '{filing_id}'"
+        row = conn.execute(sql).fetchone()
+        if row['amend_id'] is not None:
+            return row['amend_id']
+        else:
+            return None
+    except:
+        return None
+
+
 def full_name(naml, namf, namt, nams):
     if namt is not None:
         buf = f"{namt} "
@@ -204,6 +216,38 @@ def quarter_abbrev(period_start, period_desc):
     return period
 
 
+amt_tables = {
+    'cvr_e530': ['pmnt_amount'],
+    'debt': ['amt_incur', 'amt_paid'],
+    'expn': ['amount'],
+    'f495p2': ['contribamt'],
+    'latt': ['amount'],
+    'lccm': ['amount'],
+    'lexp': ['amount', 'bene_amt'],
+    'loan': ['loan_amt1', 'loan_amt2', 'loan_amt3', 'loan_amt4', 'loan_amt5', 'loan_amt6', 'loan_amt7', 'loan_amt8'],
+    # 'lobbyist_contributions1': ['amount'],
+    # 'lobbyist_contributions2': ['amount'],
+    # 'lobbyist_contributions3': ['amount'],
+    # 'lobbyist_employer1': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_employer2': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_employer3': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_firm1': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_firm2': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_firm3': ['qtr_1', 'qtr_2', 'qtr_3', 'qtr_4', 'qtr_5', 'qtr_6', 'qtr_7', 'qtr_8'],
+    # 'lobbyist_firm_employer1': ['per_total'],
+    # 'lobbyist_firm_employer2': ['per_total'],
+    'loth': ['amount'],
+    'lpay': ['fees_amt', 'reimb_amt', 'advan_amt'],
+    'rcpt': ['amount'],
+    's401': ['amount'],
+    's496': ['amount'],
+    's497': ['amount'],
+    's498': ['amt_rcvd', 'amt_attrib'],
+    'smry': ['amount_a', 'amount_b', 'amount_c'],
+    'splt': ['elec_amount']
+}
+
+
 def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
 
     context = dict()
@@ -282,6 +326,10 @@ def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
 
     form_name = None
 
+    # starts out a list of dictionaries.
+    # becomes a dictionary of dictionaries, pointed to by the filer_id
+    # to get the latest filing of a type for a filer.
+    # TODO confirm?
     for datum in data:
 
         filer_id = datum['filer_id']
@@ -296,8 +344,35 @@ def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
             if effect_dt is not None and effect_dt > next_data[filer_id]['effect_dt']:
                 next_data[filer_id] = datum
 
-    amt_tables = ['expn', 'latt', 'lccm', 'lexp', 'loth', 'rcpt', 's401', 's496', 's497']
+    # add the amount information to each record.
+    for filer_id in next_data:
 
+        entry = next_data[filer_id]
+
+        amounts = dict()
+
+        for amt_table in amt_tables:
+
+            max_amend = max_amend_id(entry['filing_id'], amt_table)
+
+            for column_name in amt_tables[amt_table]:
+
+                sql = f"""
+                    select sum({column_name}) as sum from {amt_table}
+                    where filing_id = '{entry['filing_id']}'
+                """
+
+                if max_amend:
+                    sql = f"{sql} and amend_id = '{max_amend}'"
+
+                row = conn.execute(sql).fetchone()
+
+                if row['sum'] is not None and str(row['sum']) != '0':
+                    amounts[f"{amt_table}-{column_name}"] = "${:,.2f}".format(row['sum'])
+
+        entry['amounts'] = amounts
+
+    # per-data cleanup and re-jiggering happens here.
     for filer_id in next_data:
 
         entry = next_data[filer_id]
@@ -305,23 +380,6 @@ def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
         entry['full_name'] = full_name(entry['naml'], entry['namf'], entry['namt'], entry['nams'])
 
         entry['period'] = quarter_abbrev(entry['period_start'], entry['period_desc'])
-
-        amounts = dict()
-
-        for amt_table in amt_tables:
-            sql = f"select max(amend_id) amend_id from {amt_table} where filing_id = '{entry['filing_id']}'"
-            row = conn.execute(sql).fetchone()
-            if row['amend_id'] is not None:
-                amend_id = row['amend_id']
-                sql = f"""
-                    select sum(amount) sum from {amt_table}
-                    where filing_id = '{entry['filing_id']}' and
-                          amend_id = '{amend_id}'"""
-                row = conn.execute(sql).fetchone()
-                if row['sum'] is not None and str(row['sum']) != '0':
-                    amounts[amt_table] = "${:,.2f}".format(row['sum'])
-
-        entry['amounts'] = amounts
 
     context['filing_date'] = filing_date_1
     context['filing_date_hi'] = filing_date_2
