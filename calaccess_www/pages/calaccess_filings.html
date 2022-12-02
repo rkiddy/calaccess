@@ -15,7 +15,16 @@
                         {"name": "Filer Type", "orderable": true},
                         {"name": "Period", "orderable": true},
                         {"name": "Form", "orderable": true},
-                        {"name": "Amounts", "orderable": false},
+                        {"name": "Amounts",
+                         "render": function(data, type, row, meta) {
+                                       if (type === 'display' || type === 'filter') {
+                                       return data;
+                                    }
+                                    else { // type is 'sort' in this case:
+                                        return Number($.parseHTML(data)[0].innerHTML);
+                                    }
+                                }
+                        },
                         {"name": "Rpt Covers", "orderable": false}
                     ]
                 }
@@ -59,8 +68,11 @@
                 <td>{{ filing.period }}</td>
                 <td>{{ filing.form_id }}</td>
                 <td style = "white-space: nowrap;">
+                    <div style="visibility: hidden;">{{ filing.amounts['sum'] }}</div>
                     {% for amount in filing.amounts %}
+                    {% if amount != 'sum' %}
                     {{ amount }}:&nbsp;{{ filing.amounts[amount] }}<br/>
+                    {% endif %}
                     {% endfor %}
                 </td>
                 {% if filing.rpt_start == filing.rpt_end %}

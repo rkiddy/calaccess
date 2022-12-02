@@ -351,6 +351,8 @@ def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
 
         amounts = dict()
 
+        amounts['sum'] = 0
+
         for amt_table in amt_tables:
 
             max_amend = max_amend_id(entry['filing_id'], amt_table)
@@ -369,6 +371,7 @@ def calaccess_filing_date(filing_date_1, filing_date_2=None, form_id=None):
 
                 if row['sum'] is not None and str(row['sum']) != '0':
                     amounts[f"{amt_table}-{column_name}"] = "${:,.2f}".format(row['sum'])
+                    amounts["sum"] += row['sum']
 
         entry['amounts'] = amounts
 
